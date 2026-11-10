@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>The Hollow Hour</title>
+<style>
+:root{--bg:#07090c;--fg:#d9dde3;--ac:#c9a45c;--pn:#12161b;--bd:#2a313a;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
+html,body{margin:0;height:100%;background:#000;color:var(--fg);font-family:Georgia,'Times New Roman',serif;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#vig{position:absolute;inset:0;pointer-events:none;overflow:hidden;background:radial-gradient(ellipse at center,transparent 45%,#000b 100%)}#vig::after{content:'';position:absolute;inset:-30px;opacity:.09;mix-blend-mode:overlay;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2"/></filter><rect width="160" height="160" filter="url(%23n)"/></svg>');animation:gr .6s steps(5) infinite}@keyframes gr{0%{transform:translate(0,0)}25%{transform:translate(-12px,8px)}50%{transform:translate(10px,-10px)}75%{transform:translate(-8px,-6px)}100%{transform:translate(0,0)}}
+.btn{background:var(--pn);color:var(--fg);border:1px solid var(--bd);padding:12px 16px;font:inherit;font-size:16px;border-radius:6px;cursor:pointer;touch-action:manipulation}
+.btn:active{background:#222a33}.btn.ac{border-color:var(--ac);color:var(--ac)}
+#hud{position:absolute;inset:0;pointer-events:none;display:none}
+#joy{position:absolute;left:24px;bottom:calc(28px + env(safe-area-inset-bottom,0px));width:124px;height:124px;border-radius:50%;border:2px solid #ffffff40;background:#ffffff0d;pointer-events:auto}
+#knob{position:absolute;left:41px;top:41px;width:40px;height:40px;border-radius:50%;background:#ffffff55}
+#acts{position:absolute;right:16px;bottom:calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+#acts .btn{width:88px;padding:12px 4px;background:#12161bcc}
+#top{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:8px;display:flex;gap:8px;pointer-events:auto}
+#top .btn{padding:8px 12px;background:#12161bcc}
+#obj{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:10px;max-width:50%;font-size:13px;color:var(--ac);background:#000a;padding:6px 10px;border-radius:6px;border-left:3px solid var(--ac)}
+#cross{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:#fff8}
+#prompt{position:absolute;left:50%;top:58%;transform:translateX(-50%);background:#000a;padding:6px 14px;border-radius:14px;font-size:15px;display:none;color:var(--ac);white-space:nowrap}
+#toast{position:absolute;top:16%;left:50%;transform:translateX(-50%);background:#000c;border:1px solid var(--ac);padding:8px 14px;border-radius:6px;font-size:14px;display:none;max-width:86%;text-align:center}
+#ov{position:absolute;inset:0;background:#000d;display:none;align-items:center;justify-content:center;padding:14px;z-index:5}
+#op{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:16px;width:100%;max-width:460px;max-height:100%;overflow-y:auto;touch-action:pan-y}
+#op h2{margin:0 0 10px;color:var(--ac);font-weight:normal;letter-spacing:.08em;font-size:20px}
+#op p{line-height:1.45;margin:8px 0}#op .btn{display:block;width:100%;margin-top:8px;text-align:left}
+.cl{border-left:3px solid var(--ac);padding:6px 10px;margin:8px 0;background:#0003;font-size:14px;line-height:1.4}
+.cl small{color:#8b95a3;display:block}.ok{color:#7fbf8a}.un{color:#d9a05c}.bad{color:#d96c6c}
+#menu{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:radial-gradient(circle at 50% 30%,#1a222c,#030507);z-index:4;padding:20px;text-align:center}
+#menu h1{font-weight:normal;letter-spacing:.25em;font-size:clamp(28px,9vw,48px);margin:0;color:var(--ac)}
+#menu .sub{color:#8b95a3;font-style:italic;margin-bottom:18px}#menu .btn{width:250px}
+input#code{width:100%;font-size:28px;text-align:center;letter-spacing:.4em;background:#000;color:var(--ac);border:1px solid var(--bd);padding:10px;border-radius:6px;user-select:text;touch-action:auto}
+</style>
+</head>
+<body>
+<div id="vig"></div>
+<div id="hud"><div id="obj"></div><div id="cross"></div>
+ <div id="top"><button class="btn" id="bJ">Journal</button><button class="btn" id="bP">Pause</button></div>
+ <div id="joy"><div id="knob"></div></div>
+ <div id="acts"><button class="btn ac" id="bI">Interact</button><button class="btn" id="bF">Light</button></div>
+ <div id="prompt"></div><div id="toast"></div></div>
+<div id="ov"><div id="op"></div></div>
+<div id="menu"><h1>THE HOLLOW HOUR</h1><div class="sub">Chapter One · Blackwater Hotel · Greywick</div>
+ <button class="btn ac" id="mNew">New Investigation</button><button class="btn" id="mCont">Continue</button>
+ <div id="mMsg" style="font-size:12px;color:#6b7686;max-width:300px">Left stick to move · drag the right side to look · tap Interact near glowing objects</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+if(!window.THREE){$('mMsg').textContent='3D engine failed to load. Please check your connection and reload.';return;}
+const T=THREE,C=2,H=2.6;let MW=14,MH=10;
+let MAP=["##############","#......#.....#","#......#.....#","#......#.....#","#............#","#......#.....#","#......###.###","#......#.....#","#......#.....#","##############"];
+const solid=(x,z)=>MAP[Math.floor(z/C)]?.[Math.floor(x/C)]!=='.';
+const S={px:3,pz:9,yaw:-Math.PI/2,pitch:0,clues:{},flags:{},flash:true,q:1,sens:1,level:1,bat:100,deaths:0,wrong:0};
+const QN=['Low','Medium','High'],SN=['Low','Normal','High'];
+// Renderer
+const R=new T.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.25;
+document.body.prepend(R.domElement);
+const scene=new T.Scene();scene.background=new T.Color(0x04060a);scene.fog=new T.FogExp2(0x05080d,.075);
+const cam=new T.PerspectiveCamera(72,1,.05,60);cam.rotation.order='YXZ';scene.add(cam);let built=[];const _sa=scene.add.bind(scene);scene.add=function(...a){a.forEach(x=>{if(x!==cam&&!x.isHemisphereLight)built.push(x);});return _sa(...a);};
+function size(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+addEventListener('resize',size);
+// Textures
+const nz=(g,w,h,a)=>{for(let i=0;i<w*h/6;i++){g.fillStyle='rgba(0,0,0,'+Math.random()*a+')';g.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*3,1);}};
+const tex=(w,h,fn,rx,ry)=>{const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx||1,ry||1);t.encoding=T.sRGBEncoding;t.anisotropy=4;return t;};
+const wallT=tex(256,256,(g,w,h)=>{g.fillStyle='#3a4e4c';g.fillRect(0,0,w,h);for(let x=0;x<w;x+=32){g.fillStyle='#456163';g.fillRect(x,10,16,150);}
+ g.fillStyle='#55797a';for(let x=8;x<w;x+=32)for(let y=24;y<150;y+=48){g.beginPath();g.moveTo(x,y);g.lineTo(x+8,y+12);g.lineTo(x,y+24);g.lineTo(x-8,y+12);g.fill();}
+ g.fillStyle='#5a432f';g.fillRect(0,158,w,10);g.fillStyle='#3e2c1e';g.fillRect(0,168,w,88);g.fillStyle='#2a1d13';for(let x=0;x<w;x+=32)g.fillRect(x,168,2,88);
+ g.fillStyle='#4f3a28';g.fillRect(0,0,w,10);nz(g,w,h,.4);const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#0000');gr.addColorStop(1,'#0007');g.fillStyle=gr;g.fillRect(0,0,w,h);});
+const floorT=tex(256,256,(g,w,h)=>{for(let i=0;i<8;i++){g.fillStyle=['#4a3626','#3e2d20','#52402c','#43331f'][i%4];g.fillRect(0,i*32,w,32);g.fillStyle='#120c07';g.fillRect(0,i*32,w,2);for(let j=0;j<2;j++)g.fillRect(((i*83+j*131)%256),i*32,2,32);}nz(g,w,h,.5);},MW*2,MH*2);
+const ceilT=tex(128,128,(g,w,h)=>{g.fillStyle='#4a4742';g.fillRect(0,0,w,h);g.fillStyle='#2b2723';g.fillRect(0,56,w,16);nz(g,w,h,.3);},MW*2,MH*2);
+const M=(map,rough)=>new T.MeshStandardMaterial({map,roughness:rough||.9,metalness:.02});
+const MC=(c,r,m)=>new T.MeshStandardMaterial({color:c,roughness:r==null?.8:r,metalness:m||0});
+const add=(m,x,y,z,cast)=>{m.position.set(x,y,z);m.castShadow=cast!==false;m.receiveShadow=true;scene.add(m);return m;};
+const box=(w,h,d,mat,x,y,z)=>add(new T.Mesh(new T.BoxGeometry(w,h,d),mat),x,y,z);
+// Architecture
+const wm=M(wallT);wm.bumpMap=wallT;wm.bumpScale=.8;
+for(let r=0;r<MH;r++)for(let c=0;c<MW;c++)if(MAP[r][c]==='#')box(C,H,C,wm,c*C+C/2,H/2,r*C+C/2);
+const fl=new T.Mesh(new T.PlaneGeometry(MW*C,MH*C),(()=>{const m=M(floorT,.55);m.bumpMap=floorT;m.bumpScale=.6;return m;})());fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;add(fl,MW*C/2,0,MH*C/2,false);
+const ce=new T.Mesh(new T.PlaneGeometry(MW*C,MH*C),M(ceilT));ce.rotation.x=Math.PI/2;add(ce,MW*C/2,H,MH*C/2,false);
+const hemi=new T.HemisphereLight(0x3a4c68,0x1a120c,.55);scene.add(hemi);
+// Windows with rain streaks
+const rainT=tex(64,128,(g,w,h)=>{g.fillStyle='#16283e';g.fillRect(0,0,w,h);g.strokeStyle='#7fa0c855';for(let i=0;i<30;i++){const x=Math.random()*w,y=Math.random()*h;g.beginPath();g.moveTo(x,y);g.lineTo(x+1,y+10+Math.random()*14);g.stroke();}});
+const winMat=new T.MeshBasicMaterial({map:rainT,color:0x9ab4d8});
+function windowAt(x,z,ry){const g=new T.Group();const gl=new T.Mesh(new T.PlaneGeometry(1.5,1.3),winMat);g.add(gl);
+ [[1.7,.1,0,.75],[1.7,.1,0,-.75],[.1,1.5,.8,0],[.1,1.5,-.8,0],[.06,1.3,0,0],[1.5,.06,0,0]].forEach(p=>{const b=new T.Mesh(new T.BoxGeometry(p[0],p[1],.08),MC(0x5a432f));b.position.set(p[2],p[3],.03);g.add(b);});
+ g.position.set(x,1.6,z);g.rotation.y=ry;scene.add(g);}
+windowAt(5,C+.03,0);windowAt(C+.03,13,Math.PI/2);windowAt(21,C+.03,0);windowAt(C*MW-C-.03,15,-Math.PI/2);
+// Props
+const wood=MC(0x4a3322,.7),dark=MC(0x1a1210,.6);
+const lights=[];
+function lamp(x,z){box(.06,1.5,.06,dark,x,.75,z);box(.35,.04,.35,dark,x,.02,z);
+ const sh=new T.Mesh(new T.CylinderGeometry(.14,.26,.3,16,1,true),new T.MeshStandardMaterial({color:0xd8b878,side:T.DoubleSide,emissive:0x8a6030,emissiveIntensity:.8}));add(sh,x,1.6,z,false);
+ const b=new T.Mesh(new T.SphereGeometry(.07,10,8),new T.MeshBasicMaterial({color:0xfff0c0}));add(b,x,1.55,z,false);
+ const pl=new T.PointLight(0xffb86a,1.4,10,2);pl.position.set(x,1.5,z);scene.add(pl);lights.push(pl);}
+lamp(3,3);lamp(24.6,3.4);
+// sofa
+box(2,.45,.9,MC(0x5a3238,.95),2.8,.3,14.4);box(2,.7,.25,MC(0x4a2a2f,.95),2.8,.7,14.85);box(.25,.6,.9,MC(0x4a2a2f,.95),1.75,.45,14.4);box(.25,.6,.9,MC(0x4a2a2f,.95),3.85,.45,14.4);
+// plant
+box(.3,.35,.3,MC(0x6a4a3a),11.2,.18,15.2);for(let i=0;i<6;i++){const s=box(.02,.7,.02,MC(0x5a5238),11.2+(i-3)*.04,.7,15.2+(i%2?.05:-.05));s.rotation.z=(i-2.5)*.28;s.rotation.x=(i%3-1)*.2;}
+// crates
+box(.9,.8,.9,MC(0x5a4630,.9),17.6,.4,17.2);box(.8,.7,.8,MC(0x4e3d2a,.9),18.5,.35,17.5);box(.7,.6,.7,MC(0x5a4630,.9),17.7,1.1,17.2);
+// desk + register
+box(1.8,.08,.8,wood,11,.8,2.9);box(.08,.8,.7,wood,10.15,.4,2.9);box(.08,.8,.7,wood,11.85,.4,2.9);
+const reg=new T.Group();const book=new T.Mesh(new T.BoxGeometry(.5,.06,.36),MC(0x6a2a2a));reg.add(book);const pg=new T.Mesh(new T.BoxGeometry(.46,.05,.32),MC(0xd8cfae,.95));pg.position.y=.04;reg.add(pg);reg.position.set(11,.88,2.9);reg.rotation.y=.2;scene.add(reg);
+// clock
+const clockT=tex(128,128,(g)=>{g.fillStyle='#5a4330';g.beginPath();g.arc(64,64,62,0,7);g.fill();g.fillStyle='#e4dcc4';g.beginPath();g.arc(64,64,52,0,7);g.fill();g.fillStyle='#222';for(let i=0;i<12;i++){const a=i*Math.PI/6;g.fillRect(64+Math.cos(a)*44-2,64+Math.sin(a)*44-2,4,4);}
+ g.strokeStyle='#111';g.lineCap='round';g.lineWidth=6;let a=((3+17/60)*30-90)*Math.PI/180;g.beginPath();g.moveTo(64,64);g.lineTo(64+Math.cos(a)*26,64+Math.sin(a)*26);g.stroke();g.lineWidth=4;a=(17*6-90)*Math.PI/180;g.beginPath();g.moveTo(64,64);g.lineTo(64+Math.cos(a)*40,64+Math.sin(a)*40);g.stroke();g.strokeStyle='#0005';g.lineWidth=1;g.beginPath();g.moveTo(40,20);g.lineTo(62,60);g.lineTo(54,92);g.stroke();});
+clockT.repeat.set(1,1);
+const clock=new T.Mesh(new T.CylinderGeometry(.38,.38,.08,32),[MC(0x5a4330),new T.MeshStandardMaterial({map:clockT,roughness:.5}),MC(0x5a4330)]);clock.rotation.x=Math.PI/2;add(clock,19,1.7,C+.06);
+// photo on crate
+const photoT=tex(128,96,(g)=>{g.fillStyle='#cbbf9f';g.fillRect(0,0,128,96);g.fillStyle='#3a3a3a';for(let i=0;i<5;i++){g.fillRect(16+i*22,40,14,46);g.beginPath();g.arc(23+i*22,32,8,0,7);g.fill();}g.fillStyle='#8a2a2a';g.fillRect(16+22*4+2,44,10,3);nz(g,128,96,.5);});
+box(.9,.6,.9,MC(0x4a3a2a,.9),22.4,.3,17);
+const photo=new T.Mesh(new T.PlaneGeometry(.45,.34),new T.MeshStandardMaterial({map:photoT,roughness:.9,side:T.DoubleSide}));photo.rotation.set(-Math.PI/2,0,.4);add(photo,22.4,.62,17,false);
+// safe
+const safeG=new T.Group();safeG.add(new T.Mesh(new T.BoxGeometry(.7,.95,.75),MC(0x4b5560,.4,.7)));
+const dial=new T.Mesh(new T.CylinderGeometry(.16,.16,.06,24),MC(0x9aa4af,.3,.9));dial.rotation.z=Math.PI/2;dial.position.x=-.38;safeG.add(dial);
+const hnd=new T.Mesh(new T.BoxGeometry(.05,.05,.22),MC(0xc9a45c,.3,.8));hnd.position.set(-.4,.0,.2);safeG.add(hnd);safeG.position.set(25.4,.48,9.2);safeG.traverse(o=>{o.castShadow=o.receiveShadow=true;});scene.add(safeG);
+// Orla
+const orla=new T.Group();const part=(geo,c,x,y,z)=>{const m=new T.Mesh(geo,MC(c,.85));m.position.set(x,y,z);m.castShadow=true;orla.add(m);return m;};
+part(new T.CylinderGeometry(.2,.36,.95,16),0x4a3d5c,0,.48,0);part(new T.CylinderGeometry(.21,.19,.5,16),0x6b5a4a,0,1.2,0);
+part(new T.SphereGeometry(.13,16,12),0xd8c4ae,0,1.62,0);const hair=part(new T.SphereGeometry(.14,16,12),0x9a9aa0,0,1.67,-.03);hair.scale.set(1,.85,1);part(new T.SphereGeometry(.06,10,8),0x9a9aa0,0,1.8,-.06);
+part(new T.CylinderGeometry(.045,.045,.55,8),0x6b5a4a,-.27,1.15,0).rotation.z=.12;part(new T.CylinderGeometry(.045,.045,.55,8),0x6b5a4a,.27,1.15,0).rotation.z=-.12;
+[-.05,.05].forEach(x=>{const e=new T.Mesh(new T.SphereGeometry(.015,6,6),new T.MeshBasicMaterial({color:0x111111}));e.position.set(x,1.64,.12);orla.add(e);});
+orla.position.set(7,0,5);scene.add(orla);
+// Clue glow sprites
+const glowT=tex(64,64,(g)=>{const r=g.createRadialGradient(32,32,2,32,32,32);r.addColorStop(0,'rgba(255,215,130,1)');r.addColorStop(1,'rgba(255,215,130,0)');g.fillStyle=r;g.fillRect(0,0,64,64);});
+function glow(x,y,z){const s=new T.Sprite(new T.SpriteMaterial({map:glowT,blending:T.AdditiveBlending,depthWrite:false,transparent:true,opacity:.7}));s.scale.set(.7,.7,1);s.position.set(x,y,z);scene.add(s);return s;}
+let NODES={orla:{o:orla,type:'npc',name:'Mrs. Orla Finch'},'C-001':{o:reg,type:'clue',name:'Guest register',g:glow(11,1.05,2.9)},'C-002':{o:clock,type:'clue',name:'Stopped clock',g:glow(19,1.7,C+.3)},'C-003':{o:photo,type:'clue',name:'Torn photograph',g:glow(22.4,.8,17)},safe:{o:safeG,type:'safe',name:'Wall safe'}};
+for(const k in NODES)NODES[k].o.traverse(m=>{m.userData.nid=k;});
+const pick=[];for(const k in NODES)NODES[k].o.traverse(m=>{if(m.isMesh)pick.push(m);});
+// ===== Levels =====
+const bloodT=tex(64,64,g=>{for(let i=0;i<9;i++){const x=12+Math.random()*40,y=12+Math.random()*40,r=4+Math.random()*12,gr=g.createRadialGradient(x,y,1,x,y,r);gr.addColorStop(0,'rgba(90,6,6,.9)');gr.addColorStop(1,'rgba(90,6,6,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);}});
+const SCR=['3:17','HE WATCHES','DON’T LOOK BACK','ELENA','IT COUNTS YOU','STOP THE HOUR','HE IS BEHIND YOU'];
+function dress(mp,w,h,k){for(let i=0,t=0;i<k&&t<200;t++){const c=1+((Math.random()*(w-2))|0),r=1+((Math.random()*(h-2))|0);if(mp[r][c]!=='.')continue;
+ if(i%2===0){const s=.8+Math.random()*1.2,m=new T.Mesh(new T.PlaneGeometry(s,s),new T.MeshStandardMaterial({map:bloodT,transparent:true,roughness:.3,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));m.rotation.set(-Math.PI/2,0,Math.random()*6);m.position.set(c*C+Math.random()*C,.015,r*C+Math.random()*C);scene.add(m);i++;}
+ else{const nb=[[1,0],[-1,0],[0,1],[0,-1]].find(v=>mp[r+v[1]][c+v[0]]==='#');if(!nb)continue;const tt=tex(256,64,g=>{g.font='bold 38px Georgia';g.textAlign='center';g.fillStyle='rgba(110,10,10,.95)';g.fillText(SCR[(Math.random()*SCR.length)|0],128,44);});const m=new T.Mesh(new T.PlaneGeometry(1.5,.38),new T.MeshStandardMaterial({map:tt,transparent:true,roughness:1,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));m.rotation.y=nb[0]===1?-Math.PI/2:nb[0]===-1?Math.PI/2:nb[1]===1?Math.PI:0;m.position.set(c*C+1+nb[0]*.97,1.35+Math.random()*.5,r*C+1+nb[1]*.97);scene.add(m);i++;}}}
+dress(MAP,14,10,12);
+const LB={1:built},NL={1:NODES},PL={1:pick.slice()};built=[];let npcObj=orla,hb=.55;const wk={on:false,beat:0,msg:30};
+const brickM=new T.MeshStandardMaterial({map:tex(256,256,(g,w,h)=>{g.fillStyle='#1c1917';g.fillRect(0,0,w,h);for(let r=0;r<8;r++)for(let c=0;c<5;c++){g.fillStyle=['#3a332e','#332d29','#40382f'][(r+c)%3];g.fillRect(c*64-(r%2?32:0)+2,r*32+2,60,28);}nz(g,w,h,.6);}),roughness:.95});
+const LV={
+1:{map:MAP,name:'Blackwater Hotel',ids:['C-001','C-002','C-003'],hb:.55,fog:.075,spd:0,drain:0,tries:0,sk:'safeOpen',npc:{n:'Mrs. Orla Finch'},safe:{n:'Wall safe'},start:[3,9,-Math.PI/2],intro:'',warn:''},
+2:{name:'Greywick Police Station',map:["##################","#.......#........#","#.......#........#","#.......#........#","#................#","#.......#........#","####.#####.#######","#.......#........#","#.......#........#","#................#","#.......#........#","##################"],ids:['P-1','P-2','P-3','P-4'],hb:.4,fog:.09,spd:.9,drain:.45,tries:0,sk:'safe2',code:'031704',start:[3,9,-Math.PI/2],wp:[31,5],lamps:[[1.5,1.5],[10.5,1.5],[1.5,9.5],[15.5,9.5]],wins:[[9,2.03,0],[27,2.03,0]],bat:[[13,5],[25,19]],
+ intro:'Greywick Police Station. The lights are on, but nobody has signed in for eleven years. Something in the building moves when you are not looking.',warn:'Danger: The Hollow stalks this level. Keep your flashlight on it to hold it still. Your battery drains, so find spares.',hint:'Read the notebook, the cell log and the mugshot. The code is the hour, then the cell number.',
+ safe:{n:'Key cabinet',p:[33.3,21],ry:0,t:'A six-digit dial: the hour, then the cell.'},win:'Inside is cassette 2 and a note in Elena’s hand: “The archive keeps what the town forgets. Go below.”',
+ npc:{n:'Sergeant Rook',p:[11,9],c:[0x22304a,0x33466a,0xd2b79c],i:'The sergeant does not look up. “Station’s closed. Has been for a long time.”',lie:'“Elena? No. Nobody comes through here. Nobody leaves.”',need:'P-3',sec:'He grips the desk. “She asked about Cell 4. I told her the hour opens everything. I should not have. Check the cabinet.”'},
+ clues:[['P-1',7,3,'Sergeant’s notebook',0x6a5a3a,'Scrawled in a shaking hand: “Cabinet code is the hour that repeats, then the cell number. Never write it down twice.”','Front office','Tells you how the cabinet code is built.'],['P-2',5,17,'Cell log',0x8a8a7a,'Cell 4: Deputy Harlan Moss, held since 3:17. The door has not opened since. There is no release entry.','Holding cells','Gives the cell number.'],['P-3',25,5,'Pinned mugshot',0xb8b09a,'Elena Vale’s photo pinned beside a tag: “Visited Cell 4 at 3:17. Did not leave.”','Records room','Links Elena to Cell 4 and to Rook.'],['P-4',29,15,'Evidence tag',0xc9a45c,'Tag 88: “Cassette 2, stored in the key cabinet. Do not play after dark.”','Evidence room','Confirms what the cabinet holds.']]},
+3:{name:'The Underground Archive',map:["######################","#.....#.......#......#","#.....#.......#......#","#.....#.......#......#","#....................#","#.....#.......#......#","#.....#.......#......#","###.#####.#######.####","#.....#.......#......#","#.....#.......#......#","#....................#","#.....#.......#......#","#.....#.......#......#","######################"],ids:['A-1','A-2','A-3','A-4','A-5'],hb:.28,fog:.115,spd:1.7,drain:.9,tries:3,sk:'safe3',code:'1411713',start:[3,9,-Math.PI/2],wp:[37,23],lamps:[[1.5,1.5],[10.5,4.5],[18.5,1.5],[10.5,10.5]],wins:[],bat:[[25,11],[39,19]],
+ intro:'Beneath the town, the Underground Archive. Every file here is dated 3:17. The air is thick, and the dark is listening.',warn:'Danger: The Hollow is faster and your battery drains quickly. Three wrong codes will call it to you.',hint:'Day, then month, then the hour read backwards. The ledger and the mirror note hold the numbers.',
+ safe:{n:'Archive vault',p:[21,25.3],ry:-Math.PI/2,t:'A seven-digit dial: the day, the month, then the hour reversed.'},win:'The vault opens. Behind the files, a staircase leads down. A cassette plays Elena’s voice: “It started at the Hollow House. Come before the hour.”',
+ npc:{n:'The Archivist',p:[21,21],c:[0x1a1a1a,0x2c2c34,0xc8c0b4],i:'A thin figure turns slowly. “Every file here is true. Even the ones that have not happened yet.”',lie:'“Vale? The name is not in my index.”',need:'A-2',sec:'He smiles for too long. “The fourteenth of November. After that the days stopped counting. Mind the dark, detective. It counts you.”'},
+ clues:[['A-1',5,3,'Archive index card',0x7a6a4a,'“Vault code: the day she vanished, then the month, then the hour read backwards.”','Index room','Explains how the vault code is built.'],['A-2',19,5,'Missing persons ledger',0x5a2a2a,'Elena Vale: vanished 14 November. The ink on the entry is still wet.','Ledger room','Gives the day and month: 14 and 11.'],['A-3',35,5,'Mirrored clock note',0xb8b09a,'“The hour that repeats, 3:17, reads 713 when held to a mirror.”','Clock vault','Gives the reversed hour.'],['A-4',5,23,'Torn diary page',0xcbbf9f,'Elena wrote: “The Archivist keeps the files. He keeps us too. The Hollow is not a place. It is a time.”','Reading room','Lore. The Archivist is not what he seems.'],['A-5',37,25,'Bell tower key',0x8a6a2a,'A heavy iron key tagged “Bell Tower — for the last night.” It fits no lock here.','Lower stacks','It will matter in a later level.']]}};
+const mk4=(R,G)=>{const w=R.length,c='#'+'.'.repeat(w-2)+'#',b='#'.repeat(w);return [b,R,R,R,c,R,R,G,R,R,c,R,R,b];};
+LV[4]={name:'Forest Research Facility',map:mk4('#.....#......#......#......#','###.######.#####.######.####'),ids:['F-1','F-2','F-3','F-4','F-5','F-6'],hb:.24,fog:.12,spd:1.9,drain:1,tries:3,bo:1,sk:'safe4',code:'04828',start:[3,9,-Math.PI/2],wp:[47,23],lamps:[[3.5,4.5],[10.5,1.5],[17.5,5.5],[24.5,10.5]],wins:[[9,2.03,0],[41,2.03,0]],bat:[[25,11],[43,19],[11,21]],
+ intro:'Deep in the forest, the Research Facility hums with power it should not have. A sign reads PROJECT HOLLOW, and every clock is stopped at 3:17.',warn:'Danger: Blackouts hit every few seconds and the Hollow moves faster in the dark. Three wrong codes will call it.',hint:'Badge number first, then how many subjects there really were. One note disagrees with the roster.',
+ safe:{n:'Lab terminal',p:[47,25.3],ry:-Math.PI/2,t:'A five-digit keypad: the badge number, then the subject count.'},win:'The terminal unlocks. A video plays: Elena steps into the chamber at 3:17 and the footage loops. Then one line appears: GO TO THE HOLLOW HOUSE.',
+ npc:{n:'Dr. Voss',p:[21,21],c:[0xd8dde0,0xc4cacf,0xd2b79c],i:'A woman in a stained lab coat does not turn. “You are late. The experiment finished eleven years ago. It never stopped.”',lie:'“Elena Vale? Our staff list has no such name.”',need:'F-3',sec:'Her voice cracks. “She took badge 0482 and walked into the chamber. Count the subjects carefully. We lied about the number.”'},
+ clues:[['F-1',5,3,'Research memo',0x7a7a6a,'“Project Hollow. Terminal code: badge number, then the number of subjects. Burn this memo.”','Office','How the terminal code is built.'],['F-2',19,5,'Test log',0x5a5a50,'“Chamber test began 3:17. End time: not recorded. The clocks inside did not stop; the hour did.”','Control room','The hour is the common thread.'],['F-3',33,3,'Elena’s badge',0xc9a45c,'Staff badge 0482, E. Vale, Field Analyst. The photo has been scratched out.','Security','Gives the badge number.'],['F-4',47,5,'Forest map',0x4a6a4a,'A hand-drawn map. A bell tower is circled in red, and the Hollow House lies beyond it.','Map room','Points to the final location.'],['F-5',7,23,'Subject roster',0xb8b09a,'Roster: Subjects 1 to 7, all marked “returned.” No signatures.','Records','The official subject count: 7.'],['F-6',35,17,'Torn note',0xcbbf9f,'“Subject 8 was never logged. It was the one that came out.”','Antechamber','The real count may be 8.']]};
+LV[5]={name:'The Hollow House',map:mk4('#.....#.....#.....#.....#......#','###.#####.#####.#####.#####.####'),ids:['H-1','H-2','H-3','H-4','H-5','H-6'],hb:.2,fog:.13,spd:2.1,drain:1.15,tries:2,bo:1,sk:'safe5',code:'031706',start:[3,9,-Math.PI/2],wp:[57,23],lamps:[[3.5,4.5],[15.5,4.5],[21.5,10.5],[28.5,4.5]],wins:[[11,2.03,0],[35,2.03,0],[55,2.03,0]],bat:[[23,11],[47,19],[13,21]],
+ intro:'The Hollow House was never on any map. The door is open, the rain has stopped, and somewhere inside a voice you know is humming.',warn:'Final level: blackouts, the fastest Hollow, and only two wrong codes. Trust the ink, not the paper.',hint:'The hour, then the room. One slip is forged. Remember the hotel register.',
+ safe:{n:'The hollow door',p:[57,25.3],ry:-Math.PI/2,t:'A six-digit dial inside the frame: the hour, then the room.'},win:'The door swings inward. Beyond it, a long staircase of light, and Elena’s voice: “Thank you for coming back.”',
+ npc:{n:'Elena',p:[25,21],c:[0x6a3a3a,0x8a5a5a,0xd8c4ae],i:'A woman stands facing the wall. When she turns, she has your sister’s eyes. “Adrian. You came. You are late, and you are early. Both are true here.”',lie:'“Do not trust the house. Do not trust me, until you show me what I left.”',need:'H-6',sec:'She smiles, and for a moment the rain stops. “The Hollow rewrites paper, never ink. The door answers to the hour and the true room. Go, before it is 3:17 again.”'},
+ clues:[['H-1',5,3,'Door inscription',0x6a5a3a,'Carved above the frame: “The hour, then the room where the one who vanished began.”','Foyer','How the door code is built.'],['H-2',19,5,'Old room key',0x8a6a2a,'A brass tag stamped “Room 6.” Elena’s room at Blackwater Hotel.','Parlor','Names a room.'],['H-3',31,3,'Frozen pocket watch',0xb8b09a,'The watch is stopped at 3:17. The glass is cold, and the dial is wet.','Library','Confirms the hour.'],['H-4',43,5,'Hotel slip',0xcbbf9f,'A hotel slip reading “Room 9.” The handwriting is almost Elena’s. Almost.','Study','Suspicious. It contradicts the key.'],['H-5',57,3,'Child’s drawing',0x8a2a2a,'A tall faceless figure. Beneath it: “It only moves when nobody watches.”','Nursery','Explains how the Hollow behaves.'],['H-6',7,23,'Elena’s last note',0xc9a45c,'“The Room 9 slip is forged. Trust the register, not the slip. I began in the room I signed.”','Cellar','Confirms Room 6, not Room 9.']]};
+function person(c1,c2,hc,eyes){const g=new T.Group();const pt=(geo,c,x,y,z)=>{const m=new T.Mesh(geo,MC(c,.85));m.position.set(x,y,z);m.castShadow=true;g.add(m);return m;};
+ pt(new T.CylinderGeometry(.2,.36,.95,14),c1,0,.48,0);pt(new T.CylinderGeometry(.21,.19,.5,14),c2,0,1.2,0);pt(new T.SphereGeometry(.13,14,10),hc,0,1.62,0);
+ pt(new T.CylinderGeometry(.045,.045,.55,8),c2,-.27,1.15,0).rotation.z=.12;pt(new T.CylinderGeometry(.045,.045,.55,8),c2,.27,1.15,0).rotation.z=-.12;
+ if(eyes)[-.05,.05].forEach(x=>{const e=new T.Mesh(new T.SphereGeometry(.015,6,6),new T.MeshBasicMaterial({color:0x111111}));e.position.set(x,1.64,.12);g.add(e);});return g;}
+const watcher=person(0x040404,0x9a9a9a,0x9a9a9a,0);watcher.scale.set(1,1.22,1);[-.05,.05].forEach(x=>{const e=new T.Mesh(new T.SphereGeometry(.02,6,6),new T.MeshBasicMaterial({color:0xffffff,fog:false}));e.position.set(x,1.64,.12);watcher.add(e);});watcher.visible=false;scene.add(watcher);const phantom=watcher.clone();phantom.visible=false;scene.add(phantom);
+function buildLevel(n){const d=LV[n],mp=d.map,w=mp[0].length,h=mp.length;built=[];const nodes={},pk=[];
+ const wt=n===3?brickM:new T.MeshStandardMaterial({map:wallT,roughness:.9,color:n===4?0x7fa58f:n===5?0xb08880:0x9fb8b0});
+ for(let r=0;r<h;r++)for(let c=0;c<w;c++)if(mp[r][c]==='#')box(C,H,C,wt,c*C+C/2,H/2,r*C+C/2);
+ const ft=floorT.clone();ft.needsUpdate=true;ft.repeat.set(w*2,h*2);const f=new T.Mesh(new T.PlaneGeometry(w*C,h*C),new T.MeshStandardMaterial({map:ft,bumpMap:ft,bumpScale:.6,roughness:.55,color:n===3?0x778899:0xaab0b0}));f.rotation.x=-Math.PI/2;f.receiveShadow=true;add(f,w*C/2,0,h*C/2,false);
+ const ct=ceilT.clone();ct.needsUpdate=true;ct.repeat.set(w*2,h*2);const cl=new T.Mesh(new T.PlaneGeometry(w*C,h*C),M(ct));cl.rotation.x=Math.PI/2;add(cl,w*C/2,H,h*C/2,false);
+ d.lamps.forEach(p=>lamp(p[0]*C,p[1]*C));d.wins.forEach(p=>windowAt(p[0],p[1],p[2]));dress(mp,w,h,12+n*2);
+ let s=n*977;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;const keep=d.clues.map(c=>[c[1],c[2]]).concat([d.npc.p,d.safe.p,d.start],d.bat);
+ for(let i=0,t=0;i<16&&t<120;t++){const cx2=(1+rnd()*(w-2))|0,cz=(1+rnd()*(h-2))|0;if(mp[cz][cx2]!=='.')continue;const nb=[[1,0],[-1,0],[0,1],[0,-1]].find(v=>mp[cz+v[1]][cx2+v[0]]==='#');if(!nb)continue;const x=cx2*C+1+nb[0]*.6,z=cz*C+1+nb[1]*.6;if(keep.some(k=>Math.hypot(k[0]-x,k[1]-z)<2.4))continue;const bh=.5+rnd()*.8;box(.5+rnd()*.5,bh,.5+rnd()*.5,MC(n===3?0x4a4540:0x5a4630,.9),x,bh/2,z);i++;}
+ d.clues.forEach(c=>{const id=c[0],x=c[1],z=c[2];box(.7,.75,.5,wood,x,.37,z);const o=new T.Mesh(new T.BoxGeometry(.32,.05,.24),MC(c[4],.7));o.rotation.y=rnd()*3;add(o,x,.78,z);nodes[id]={o,type:'clue',name:c[3],g:glow(x,1.05,z)};});
+ d.bat.forEach((p,i)=>{const id='B'+n+i;box(.5,.25,.5,wood,p[0],.12,p[1]);const o=new T.Mesh(new T.CylinderGeometry(.06,.06,.2,10),MC(0x3a8cff,.4,.5));o.rotation.z=1.4;add(o,p[0],.33,p[1]);const g=glow(p[0],.6,p[1]);g.material.color.set(0x6aa8ff);nodes[id]={o,type:'bat',name:'Extra battery',g};});
+ const nc=d.npc,pg=person(nc.c[0],nc.c[1],nc.c[2],1);pg.position.set(nc.p[0],0,nc.p[1]);scene.add(pg);nodes.npc={o:pg,type:'npc',name:nc.n};
+ const sg=new T.Group();sg.add(new T.Mesh(new T.BoxGeometry(.8,1.1,.75),MC(n===3?0x2a2f35:0x4b5560,.4,.7)));const dl=new T.Mesh(new T.CylinderGeometry(.17,.17,.06,24),MC(0x9aa4af,.3,.9));dl.rotation.z=Math.PI/2;dl.position.x=-.42;sg.add(dl);sg.position.set(d.safe.p[0],.56,d.safe.p[1]);sg.rotation.y=d.safe.ry;sg.traverse(o=>{o.castShadow=o.receiveShadow=true;});scene.add(sg);nodes.safe={o:sg,type:'safe',name:d.safe.n};
+ for(const k in nodes)nodes[k].o.traverse(m=>{m.userData.nid=k;if(m.isMesh)pk.push(m);});
+ LB[n]=built;built=[];NL[n]=nodes;PL[n]=pk;}
+const LORE=['Elena checked in at 3:17 eleven years ago and never left. The hotel has been repeating that night ever since.','Deputy Moss sits in Cell 4, unaged. Sergeant Rook locked him in the hour. The police knew about the loop and chose to keep it quiet.','The Archivist records people as files. Elena was filed on 14 November. The files rewrite themselves, and the Hollow feeds on the gaps.','Project Hollow opened a door in time. Subject 8 came out wrong: it is the Hollow. It moves only when unwatched, and it carries Elena’s badge.','Elena stayed in the loop to hold the door shut. Whoever stands in the hour keeps the Hollow inside Greywick. The house wants a replacement.'];
+function loreHtml(){const k=[1,2,3,4,5].filter(n=>S.flags[LV[n].sk]).length;if(!k)return '';return '<h2 style="margin-top:14px;font-size:16px">What you know</h2>'+LORE.slice(0,k).map(t=>'<div class="cl">'+t+'</div>').join('');}
+function ghost(){if(phantom.visible||ovOpen)return;const a=S.yaw+(Math.random()-.5)*.9,d=5+Math.random()*3;phantom.position.set(S.px-Math.sin(a)*d,0,S.pz-Math.cos(a)*d);phantom.rotation.y=Math.atan2(S.px-phantom.position.x,S.pz-phantom.position.z);phantom.visible=true;snd('whisper');setTimeout(()=>{phantom.visible=false;},1100);}
+function wkReset(){const p=LV[S.level].wp;watcher.position.set(p[0],0,p[1]);}
+function enterLevel(n,keep){if(S.bat==null)S.bat=100;if(!LB[n])buildLevel(n);const d=LV[n];for(const k in LB)LB[k].forEach(o=>{o.visible=(+k===n);});
+ S.level=n;MAP=d.map;NODES=NL[n];pick.length=0;PL[n].forEach(m=>pick.push(m));npcObj=(NODES.orla||NODES.npc).o;
+ if(!keep){S.px=d.start[0];S.pz=d.start[1];S.yaw=d.start[2];S.pitch=0;}
+ for(const k in NODES){const nd=NODES[k];if(nd.type==='clue'||nd.type==='bat'){const got=nd.type==='clue'?S.clues[k]:S.flags['g'+k];nd.g.visible=!got;nd.o.visible=!got||k==='C-002';}}
+ hb=d.hb;scene.fog.density=d.fog;{const fc=[0,0x05080d,0x07110f,0x0e0a06,0x050f09,0x180606][n];scene.fog.color.setHex(fc);scene.background.setHex(fc);}wk.on=d.spd>0;watcher.visible=wk.on;if(wk.on)wkReset();objective();}
+function objective(){const d=LV[S.level],n=d.ids.filter(i=>S.clues[i]).length,t=d.ids.length;
+ $('obj').innerHTML='<b>Level '+S.level+' · '+d.name+'</b><br>'+(S.flags[d.sk]?'Level complete. Open the journal for the next level.':n>=t?'Open the '+d.safe.n.toLowerCase()+'.':'Evidence '+n+'/'+t+'. Speak to '+d.npc.n+'.')+(d.drain?'<br>Battery '+Math.round(S.bat)+'%':'');}
+function nextLevel(){close();S.flash=true;S.wrong=0;enterLevel(S.level+1,false);save(true);const d=LV[S.level];panel('Level '+S.level+' · '+d.name,'<p>'+d.intro+'</p><p class="bad"><small>'+d.warn+'</small></p>',[btn('Begin',close,'ac')]);}
+function toMenu(){close();paused=false;running=false;$('hud').style.display='none';$('menu').style.display='flex';$('mCont').style.display=hasSave()?'block':'none';}
+function ending(){panel('The Hollow Hour','<p>Elena’s voice fades into static. Your phone buzzes: a new voicemail, received eleven years ago, from your own number. In your voice it says: “Adrian, don’t come to Greywick.” Somewhere above, a bell rings, and every clock stops at 3:17.</p><p class="ok">The Hollow House falls silent. For now. Thank you for playing. More chapters are coming.</p>',[btn('Main menu',toMenu,'ac')]);}
+function caught(){S.deaths=(S.deaths||0)+1;snd('bad');lt=1;toast('The Hollow ne tumhe pakad liya. Tum entrance par jaag uthte ho…');const d=LV[S.level];S.px=d.start[0];S.pz=d.start[1];S.yaw=d.start[2];wkReset();}
+function scare(){if(S.level!==1||wk.on)return;watcher.visible=true;watcher.position.set(S.px-Math.sin(S.yaw)*5,0,S.pz-Math.cos(S.yaw)*5);toast('Something was standing there.');snd('thunder');setTimeout(()=>{if(!wk.on)watcher.visible=false;},1400);}
+function takeBat(id){S.flags['g'+id]=1;NODES[id].o.visible=false;NODES[id].g.visible=false;S.bat=Math.min(100,S.bat+45);snd('click');toast('Extra battery mil gayi: +45%');save(true);objective();}
+function talkL(){const n=LV[S.level].npc,fk='sec'+S.level;const say=t=>{const bs=[btn('“Have you seen Elena Vale?”',()=>say(S.flags[fk]?'“She is still here. In the hour.”':n.lie)),btn('“What is this place hiding?”',()=>say('“Nothing that wants to be found.”'))];if(S.clues[n.need])bs.push(btn('Show the '+CL[n.need][0]+' ('+n.need+')',()=>{S.flags[fk]=1;save(true);say(n.sec);},'ac'));bs.push(btn('Leave',close));panel(n.n,'<p>'+t+'</p>',bs);};say(n.i);}
+function safeL(){const d=LV[S.level],n=S.level,L=d.code.length;if(S.flags[d.sk]){toast('Ye pehle hi khul chuki hai.');return;}
+ panel(d.safe.n,'<p>'+d.safe.t+'</p><input id="code" inputmode="numeric" maxlength="'+L+'" placeholder="'+'-'.repeat(L)+'"><p id="fb" class="bad" style="min-height:20px"></p>',[btn('Try code',()=>{const v=$('code').value;
+  if(v===d.code){S.flags[d.sk]=1;save(true);snd('open');objective();panel('Opened','<p>'+d.win+'</p>',[n<5?btn('Next level',nextLevel,'ac'):btn('Finish',ending,'ac'),btn('Stay',close)]);return;}
+  snd('bad');if(v.length<L){$('fb').textContent=L+' ank daalo.';return;}
+  S.wrong=(S.wrong||0)+1;$('fb').textContent='Galat code.'+(d.tries?' ('+Math.max(0,d.tries-S.wrong)+' attempts left)':'');
+  if(d.tries&&S.wrong>=d.tries){S.wrong=0;close();toast('The dial screams. The Hollow is close…');watcher.position.set(S.px+Math.sin(S.yaw)*4,0,S.pz+Math.cos(S.yaw)*4);}},'ac'),btn('Step back',close)]);}
+const WH=['Elena’s voice, very faint: “Don’t look away.”','The walls breathe in. Then out.','A child laughs somewhere you cannot see.','Your own footsteps echo behind you, a moment late.','The numbers 3:17 are scratched into the wood beside you. They were not there before.','Behind you, a clock ticks once.','Someone whispers your name from the next room.','The lights dim for a heartbeat. Then return.','You hear footsteps that match yours, a second late.','A cold draft smells of rain and old paper.'];
+// Flashlight
+const spot=new T.SpotLight(0xffe6b8,2.6,24,.46,.55,1.3);spot.position.set(.15,-.1,0);spot.target.position.set(0,0,-1);cam.add(spot);cam.add(spot.target);
+spot.shadow.mapSize.set(1024,1024);spot.shadow.bias=-.0004;spot.shadow.camera.near=.2;spot.shadow.camera.far=24;
+const DN=160,dpos=new Float32Array(DN*3),dbase=new Float32Array(DN*3);for(let i=0;i<DN*3;i++)dbase[i]=Math.random()*8;
+const dgeo=new T.BufferGeometry();dgeo.setAttribute('position',new T.BufferAttribute(dpos,3));const dust=new T.Points(dgeo,new T.PointsMaterial({color:0xbfc8d8,size:.03,transparent:true,opacity:.55,depthWrite:false}));dust.frustumCulled=false;scene.add(dust);
+const rc=new T.Raycaster();rc.far=3.4;
+function setQ(q){S.q=q;R.setPixelRatio(q===0?.55:q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,2));spot.castShadow=q>0;spot.shadow.mapSize.set(q===2?1024:512,q===2?1024:512);if(spot.shadow.map){spot.shadow.map.dispose();spot.shadow.map=null;}scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});size();}
+// Audio
+let AC=null,MG=null,muted=false,stepT=0;
+function audioInit(){if(AC){if(AC.state==='suspended')AC.resume();return;}
+ try{AC=new (window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=muted?0:1;MG.connect(AC.destination);
+ const len=AC.sampleRate*2,buf=AC.createBuffer(1,len,AC.sampleRate),ch=buf.getChannelData(0);for(let i=0;i<len;i++)ch[i]=Math.random()*2-1;
+ const src=AC.createBufferSource();src.buffer=buf;src.loop=true;const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=900;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=6000;const rg=AC.createGain();rg.gain.value=.06;src.connect(hp);hp.connect(lp);lp.connect(rg);rg.connect(MG);src.start();
+ [55,58.5].forEach(f=>{const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=f;const lf=AC.createBiquadFilter();lf.type='lowpass';lf.frequency.value=140;const g=AC.createGain();g.gain.value=.05;o.connect(lf);lf.connect(g);g.connect(MG);o.start();});}catch(e){AC=null;}}
+function snd(k){if(!AC||muted)return;const n=AC.currentTime;const tone=(f,d,ty,v,f2)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.setValueAtTime(f,n);if(f2)o.frequency.exponentialRampToValueAtTime(f2,n+d);g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(MG);o.start(n);o.stop(n+d);};
+ if(k==='step')tone(90+Math.random()*30,.12,'triangle',.18,50);else if(k==='clue'){tone(660,.5,'sine',.2);setTimeout(()=>snd('c2'),120);}else if(k==='c2')tone(990,.7,'sine',.15);
+ else if(k==='click')tone(1200,.04,'square',.06);else if(k==='bad')tone(140,.3,'sawtooth',.12,90);else if(k==='open'){tone(220,.8,'sine',.2,440);tone(330,1.2,'sine',.12,660);}
+ else if(k==='whisper'){const b=AC.createBuffer(1,AC.sampleRate*.7|0,AC.sampleRate),ch=b.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=(Math.random()*2-1)*Math.sin(i/ch.length*Math.PI);const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1600+Math.random()*800;f.Q.value=3;const g=AC.createGain();g.gain.value=.6;s.connect(f);f.connect(g);g.connect(MG);s.start(n);}else if(k==='creak')tone(160+Math.random()*60,.9,'sawtooth',.07,70);else if(k==='beat')tone(52,.2,'sine',.35,38);else if(k==='thunder')setTimeout(()=>snd('rumble'),400);else if(k==='rumble')tone(60,2.4,'sawtooth',.25,28);}
+// Input
+const keys={};let jx=0,jy=0,joyId=null,lookId=null,lx=0,ly=0,md=false;
+const joy=$('joy'),knob=$('knob');
+function jm(t){const r=joy.getBoundingClientRect();let dx=t.clientX-r.left-62,dy=t.clientY-r.top-62;const d=Math.hypot(dx,dy);if(d>52){dx*=52/d;dy*=52/d;}jx=dx/52;jy=dy/52;{const m=Math.hypot(dx,dy)/52,k=m<.1?0:Math.pow((m-.1)/.9,1.3)/m;jx*=k;jy*=k;}knob.style.left=41+dx+'px';knob.style.top=41+dy+'px';}
+joy.addEventListener('touchstart',e=>{e.preventDefault();joyId=e.changedTouches[0].identifier;jm(e.changedTouches[0]);},{passive:false});
+joy.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(t.identifier===joyId)jm(t);},{passive:false});
+const je=e=>{for(const t of e.changedTouches)if(t.identifier===joyId){joyId=null;jx=jy=0;knob.style.left='41px';knob.style.top='41px';}};
+joy.addEventListener('touchend',je);joy.addEventListener('touchcancel',je);
+const cv=R.domElement;
+cv.addEventListener('touchstart',e=>{for(const t of e.changedTouches)if(lookId===null&&t.clientX>innerWidth*.35){lookId=t.identifier;lx=t.clientX;ly=t.clientY;}},{passive:true});
+cv.addEventListener('touchmove',e=>{for(const t of e.changedTouches)if(t.identifier===lookId){ldx+=(t.clientX-lx)*.0065*S.sens;ldy+=(t.clientY-ly)*.005*S.sens;lx=t.clientX;ly=t.clientY;}},{passive:true});
+const le=e=>{for(const t of e.changedTouches)if(t.identifier===lookId)lookId=null;};cv.addEventListener('touchend',le);cv.addEventListener('touchcancel',le);
+cv.addEventListener('mousedown',e=>{md=true;lx=e.clientX;ly=e.clientY;});addEventListener('mouseup',()=>md=false);
+addEventListener('mousemove',e=>{if(md){S.yaw-=(e.clientX-lx)*.005*S.sens;S.pitch=Math.max(-1.2,Math.min(1.2,S.pitch-(e.clientY-ly)*.004*S.sens));lx=e.clientX;ly=e.clientY;}});
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='e')interact();});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+// UI
+let running=false,paused=false,ovOpen=false,near=null,ldx=0,ldy=0,sjx=0,sjy=0;
+function toast(m){const e=$('toast');e.textContent=m;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800);}
+function close(){ovOpen=false;$('ov').style.display='none';}
+function btn(l,f,c){const b=document.createElement('button');b.className='btn '+(c||'');b.textContent=l;b.onclick=f;return b;}
+function panel(t,body,bs){$('op').innerHTML='<h2>'+t+'</h2>'+body;for(const b of bs)$('op').appendChild(b);ovOpen=true;$('ov').style.display='flex';}
+function save(q){try{localStorage.setItem('hollowhour3d',JSON.stringify(S));if(!q)toast('Game saved.');return true;}catch(e){if(!q)toast('Saving is unavailable here.');return false;}}
+function load(){try{const d=JSON.parse(localStorage.getItem('hollowhour3d')||'null');if(!d)return false;Object.assign(S,d);return true;}catch(e){return false;}}
+const hasSave=()=>{try{return !!localStorage.getItem('hollowhour3d');}catch(e){return false;}};
+function objectiveOld(){const n=Object.keys(S.clues).length;$('obj').textContent=S.flags.safeOpen?'Chapter One complete.':n>=3?'Open the wall safe in the office: the hour that repeats.':'Search the hotel for evidence ('+n+'/3). Speak to Orla.';}
+const CL={'C-001':['Guest register','A page from eleven years ago: “E. Vale — Room 6 — checked in 3:17 a.m.” The ink is still wet.','Lobby desk','Places Elena here at 3:17.'],
+'C-002':['Stopped clock','The office clock is frozen at 3:17. There is no battery, yet the second hand twitches.','Back office','The repeated hour. Likely a combination.'],
+'C-003':['Torn photograph','Elena with four hotel staff. On the back: “They all stopped at the same hour. Ask Orla.”','Storeroom','Links Elena to the staff, and to Orla.']};
+function collect(id){if(S.clues[id])return;S.clues[id]=1;NODES[id].g.visible=false;if(id!=='C-002')NODES[id].o.visible=false;snd('clue');save(true);objective();if(S.level===1&&Object.keys(S.clues).length===2)setTimeout(scare,1800);
+ panel(CL[id][0]+' <small style="color:#8b95a3">'+id+'</small>','<p>'+CL[id][1]+'</p><p class="un"><small>Added to your journal.</small></p>',[btn('Continue',close)]);}
+function hint(){if(S.level>1)return LV[S.level].hint;const n=Object.keys(S.clues).length;return S.flags.safeOpen?'You are done with Chapter One.':n<3?'Look for glowing objects: the lobby desk, the back office and the storeroom.':'The clock and the register share one time. Try it as four digits.';}
+function journal(){const have=Object.keys(S.clues);let h='<p style="color:#8b95a3;font-size:14px">Detective Adrian Vale · Greywick case file</p>';
+ if(!have.length)h+='<p>No evidence yet.</p>';
+ for(const id of have)h+='<div class="cl"><b>'+id+' · '+CL[id][0]+'</b><br>'+CL[id][1]+'<small>Found: '+CL[id][2]+' · '+CL[id][3]+' · <span class="ok">Collected</span></small></div>';
+ h+='<h2 style="margin-top:14px;font-size:16px">Evidence board</h2>';const t1=S.clues['C-001']&&S.clues['C-002'];
+ h+='<div class="cl"><b>Elena checked in at 3:17</b><small>Needs C-001 + C-002 · <span class="'+(t1?'ok':'un')+'">'+(t1?'Confirmed':'Unverified hypothesis')+'</span></small></div>';
+ const t2=S.clues['C-003']&&S.flags.orlaDenied;h+='<div class="cl"><b>Orla is hiding what happened</b><small>Needs C-003 + a contradiction · <span class="'+(t2?'ok':'un')+'">'+(t2?'Confirmed':'Unverified hypothesis')+'</span></small></div>';
+ if(S.flags.orlaDenied)h+='<div class="cl"><b class="bad">Contradiction</b><br>Orla denied Elena stayed here, yet the register says otherwise.</div>';
+ h+='<h2 style="margin-top:14px;font-size:16px">Inventory</h2><p>'+(have.length?have.map(i=>CL[i][0]).join(', '):'Empty')+(S.flags.safeOpen?', Elena’s recorder':'')+'</p><div class="cl"><b>Hint</b><br>'+hint()+'</div>';
+ panel('Investigation Journal',h+loreHtml(),(S.flags[LV[S.level].sk]&&S.level<5?[btn('Next level',nextLevel,'ac'),btn('Close',close)]:[btn('Close',close)]));}
+function talk(){const reg=!!S.clues['C-001'],ph=!!S.clues['C-003'];
+ const say=(who,txt)=>{const bs=[];
+  bs.push(btn('“Have you seen Elena Vale?”',()=>{if(S.flags.orlaCracked)say('Orla','“She came in at the hour. She never left it.”');else{S.flags.orlaDenied=1;say('Orla',reg?'“No one by that name has ever stayed here, detective.” Her hand trembles on the counter.':'“Vale? No. Our register is clean. Why do you ask?”');}}));
+  bs.push(btn('“What happens at 3:17?”',()=>say('Orla','She stares at the window. “Nothing happens at 3:17, detective. That is the horror of it. Nothing ever moves again. Except the guests.”')));bs.push(btn('“Why does this hotel feel stopped in time?”',()=>say('Orla','“Rain does that to Greywick. People stop noticing the clocks.”')));
+  if(reg)bs.push(btn('Show her the guest register (C-001)',()=>{S.flags.orlaCracked=1;save(true);say('Orla','Her face drains. “That page was burned. …The office clock stopped that night. The safe behind it answers to the hour. Not a word more.”');},'ac'));
+  if(ph)bs.push(btn('Show her the torn photograph (C-003)',()=>say('Orla','“Those four are gone. I am the only one left. Please, find her first.”')));
+  bs.push(btn('Leave',close));panel(who,'<p>'+txt+'</p>',bs);};
+ say('Mrs. Orla Finch','The clerk looks up from her ledger. “Room for the night, or are you looking for someone?”');}
+function safe(){if(S.level>1)return safeL();if(S.flags.safeOpen){toast('Tijori ab khaali hai.');return;}
+ panel('Wall Safe','<p>A four-digit dial. Scratched beneath it: “Only the hour that repeats.”</p><input id="code" inputmode="numeric" maxlength="4" placeholder="----"><p id="fb" class="bad" style="min-height:20px"></p>',
+ [btn('Try code',()=>{const v=$('code').value;if(v==='0317'){S.flags.safeOpen=1;save(true);snd('open');objective();panel('The safe opens','<p>Inside is a small cassette recorder. You press play. Static, then a voice you have not heard in eleven years:</p><p><i>“Adrian, if you hear this, don’t trust the hour…”</i></p><p class="ok">End of Level 1. Level 2 awaits.</p>',[btn('Next level',nextLevel,'ac'),btn('Stay',close)]);}else{snd('bad');$('fb').textContent=v.length<4?'Chaar ank daalo.':'Galat code. Kuch nahi hua.';}},'ac'),btn('Step back',close)]);}
+function interact(){if(!running||paused||ovOpen||!near)return;const n=NODES[near];if(n.type==='clue')collect(near);else if(n.type==='npc')(S.level===1?talk:talkL)();else if(n.type==='bat')takeBat(near);else safe();}
+function settings(){const mk=()=>{panel('Settings','',[btn('Graphics: '+QN[S.q],()=>{setQ((S.q+1)%3);save(true);settings();}),btn('Look sensitivity: '+SN[S.sens<.9?0:S.sens>1.1?2:1],()=>{S.sens=S.sens<.9?1:S.sens>1.1?.6:1.5;save(true);settings();}),btn('Sound: '+(muted?'Off':'On'),()=>{muted=!muted;if(MG)MG.gain.value=muted?0:1;settings();}),btn('Back',pause,'ac')]);};mk();}
+function pause(){if(!running)return;if(ovOpen&&!paused)return;paused=true;panel('Paused','',[btn('Resume',()=>{close();paused=false;},'ac'),btn('Journal',()=>{paused=false;journal();}),btn('Settings',settings),btn('Save game',()=>save()),btn('Load saved game',()=>{if(load()){setQ(S.q);enterLevel(S.level||1,true);toast('Game load ho gaya.');close();paused=false;}else toast('Koi saved game nahi mila.');}),btn('Main menu',()=>{close();paused=false;running=false;$('hud').style.display='none';$('menu').style.display='flex';$('mCont').style.display=hasSave()?'block':'none';})]);}
+function start(cont){if(cont){if(!load())return;}else Object.assign(S,{px:3,pz:9,yaw:-Math.PI/2,pitch:0,clues:{},flags:{},flash:true,level:1,bat:100,deaths:0,wrong:0});
+ for(const q of [2,3,4,5])LV[q].clues.forEach(c=>{CL[c[0]]=[c[3],c[5],c[6],c[7]];});enterLevel(S.level||1,cont);
+ setQ(S.q);$('menu').style.display='none';$('hud').style.display='block';audioInit();running=true;paused=false;objective();
+ if(!cont)panel('Voicemail · 3:17 a.m.','<p style="color:#8b95a3;font-size:14px">Received eleven years ago. Played tonight.</p><p><i>“Adrian… it’s me. If you get this, I’m in Greywick. Blackwater Hotel. The hour keeps repeating, and I can’t make it stop…”</i></p><p>You drive through the rain. The lobby is empty, the clock is wrong, and the register is open. Every guest in it signed at 3:17. Behind you, the door closes by itself.</p>',[btn('Step inside',close,'ac')]);else toast('Wapas swagat hai, Detective.');}
+function startAt(n){start(false);if(n>1){close();S.flags={};enterLevel(n,false);const d=LV[n];panel('Level '+n+' · '+d.name,'<p>'+d.intro+'</p><p class="bad"><small>'+d.warn+'</small></p>',[btn('Begin',close,'ac')]);}}
+if($('mSel'))$('mSel').onclick=()=>{panel('Select Level','<p style="color:#8b95a3;font-size:14px">Jump to any level. Evidence from earlier levels is not carried over.</p>',[1,2,3,4,5].map(n=>btn('Level '+n+' · '+LV[n].name,()=>{close();startAt(n);})).concat([btn('Back',close)]));};
+$('mNew').onclick=()=>start(false);$('mCont').onclick=()=>start(true);$('bI').onclick=interact;$('bF').onclick=()=>{if(S.bat<=0&&!S.flash){toast('Battery khatam ho gayi. Extra battery dhundho.');return;}S.flash=!S.flash;snd('click');};
+$('bJ').onclick=()=>{if(!ovOpen&&running)journal();};$('bP').onclick=pause;$('mCont').style.display=hasSave()?'block':'none';
+setInterval(()=>{if(running&&!paused&&!ovOpen)save(true);},20000);
+// Loop
+let last=performance.now(),bob=0,lt=0,nextL=8000;
+function frame(t){requestAnimationFrame(frame);const bf=(LV[S.level].bo&&(t%26000)>20000)?.12:1;if(bf<1&&!frame.bo){frame.bo=1;toast('Batti gul! Andhere mein wo aur tez chalta hai.');}else if(bf===1)frame.bo=0;const dt=Math.min(.05,(t-last)/1000);last=t;
+ if(running&&!paused&&!ovOpen){const la=1-Math.pow(.0005,dt);S.yaw-=ldx*la;S.pitch=Math.max(-1.2,Math.min(1.2,S.pitch-ldy*la));ldx*=1-la;ldy*=1-la;const ja=Math.min(1,dt*14);sjx+=(jx-sjx)*ja;sjy+=(jy-sjy)*ja;let fw=-sjy,st=sjx;if(keys.w||keys.arrowup)fw=1;if(keys.s||keys.arrowdown)fw=-1;if(keys.d||keys.arrowright)st=1;if(keys.a||keys.arrowleft)st=-1;
+  const sp=3.1*dt,fx=-Math.sin(S.yaw),fz=-Math.cos(S.yaw),rx=Math.cos(S.yaw),rz=-Math.sin(S.yaw),mx=(fx*fw+rx*st)*sp,mz=(fz*fw+rz*st)*sp,r=.35;
+  const px2=S.px+mx,pz2=S.pz+mz;const hit=(x,z)=>solid(x+r,z)||solid(x-r,z)||solid(x,z+r)||solid(x,z-r)||Math.hypot(x-npcObj.position.x,z-npcObj.position.z)<.55;
+  if(!hit(px2,S.pz))S.px=px2;if(!hit(S.px,pz2))S.pz=pz2;const mv=Math.hypot(mx,mz);if(mv>0){bob+=mv*5;stepT+=mv;if(stepT>1.5){stepT=0;snd('step');}}
+  rc.setFromCamera({x:0,y:0},cam);near=null;const hs=rc.intersectObjects(pick,false);for(const h of hs){const id=h.object.userData.nid;if(id&&!(NODES[id].type==='clue'&&S.clues[id])){near=id;break;}}
+  const p=$('prompt');if(near){p.style.display='block';p.textContent=NODES[near].name+(NODES[near].type==='npc'?' se baat karo':NODES[near].type==='safe'?' kholo':' dekho');}else p.style.display='none';
+  const dd=LV[S.level];if(dd.drain&&S.flash&&S.bat>0){S.bat=Math.max(0,S.bat-dd.drain*dt);if(S.bat===0)toast('Torch ki battery khatam ho gayi.');}const bi=Math.floor(S.bat);if(frame.lb!==bi){frame.lb=bi;objective();}
+  if(wk.on){const dx=S.px-watcher.position.x,dz=S.pz-watcher.position.z,dist=Math.hypot(dx,dz)||1,cosA=(-dx*-Math.sin(S.yaw)-dz*Math.cos(S.yaw))/dist,seen=S.flash&&S.bat>0&&cosA>.82&&dist<16;
+   if(!seen){const sp2=dd.spd*(bf<1?1.5:1)*dt;watcher.position.x+=dx/dist*sp2;watcher.position.z+=dz/dist*sp2;}watcher.rotation.y=Math.atan2(dx,dz);
+   wk.fear=Math.max(0,1-dist/10);wk.beat-=dt;if(dist<8&&wk.beat<=0){snd('beat');wk.beat=.3+dist*.12;}wk.msg-=dt;if(wk.msg<0){wk.msg=40+Math.random()*40;toast(WH[(Math.random()*WH.length)|0]);}if(dist<.9)caught();}}
+ const fr=wk.on?wk.fear||0:0;if(frame.fv!==Math.round(fr*20)){frame.fv=Math.round(fr*20);$('vig').style.boxShadow='inset 0 0 '+(60+fr*160)+'px rgba(140,0,0,'+(fr*.85).toFixed(2)+')';}
+ cam.position.set(S.px+(Math.random()-.5)*fr*.05,1.65+Math.sin(bob)*.03+(Math.random()-.5)*fr*.05,S.pz);cam.rotation.set(S.pitch,S.yaw,0);
+ npcObj.rotation.y=Math.atan2(S.px-npcObj.position.x,S.pz-npcObj.position.z)*.8+Math.sin(t/900)*.03;npcObj.position.y=Math.sin(t/700)*.006;
+ spot.visible=S.flash&&S.bat>0;spot.intensity=S.bat<20&&S.bat>0?2.6*(.4+Math.random()*.6):2.6;
+ lights.forEach((l,i)=>{l.intensity=(1.3+Math.sin(t/110+i*2)*.1+Math.random()*.08)*bf;});
+ nextL-=dt*1000;frame.gh=(frame.gh||40)-dt;if(frame.gh<0&&running&&!paused){frame.gh=30+Math.random()*35;ghost();}frame.cr=(frame.cr||20)-dt;if(frame.cr<0){frame.cr=14+Math.random()*22;snd('creak');}if(nextL<0){lt=1;nextL=9000+Math.random()*12000;snd('thunder');}lt=Math.max(0,lt-dt*3.2);
+ const fl=lt>.6?lt:(lt>.3&&lt<.45?.7:lt*.3);hemi.intensity=hb*bf+fl*3.2;winMat.color.setRGB(.6+fl*.9,.7+fl*.9,.85+fl*.9);rainT.offset.y=(rainT.offset.y-dt*1.2)%1;
+ for(const k in NODES){const g=NODES[k].g;if(g&&g.visible)g.material.opacity=.55+.25*Math.sin(t/300);}
+ for(let i=0;i<DN*3;i++){const k=i%3,c=k===0?cam.position.x:k===1?cam.position.y:cam.position.z,v=dbase[i]+t*.00025*(1+k*.4)*(i%2?1:-1);dpos[i]=c+((((v-c)%8)+8)%8-4);}dgeo.attributes.position.needsUpdate=true;
+ R.render(scene,cam);}
+// ===== Hinglish =====
+const TX={
+2:{i:'Greywick Thana. Batti jal rahi hai, par gyarah saal se yahan kisi ne haazri nahi lagayi. Jab tum nahi dekhte, imaarat mein kuch hilta hai.',w:'Khatra: The Hollow is level mein ghoomta hai. Usko torch se dekhte raho to wo ruka rehta hai. Battery khatam hoti hai, extra battery dhundho.',h:'Notebook, cell log aur mugshot padho. Code hai: ghanta, phir cell number.',sn:'Chaabi ki almari',st:'Chhe ankon ka dial: ghanta, phir cell number.',v:'Andar cassette 2 aur Elena ke haath ka ek note hai: “Archive wahi rakhta hai jo shehar bhool jaata hai. Neeche jao.”',
+ np:['Sergeant Rook','Sergeant upar nahi dekhta. “Thana band hai. Kaafi time se.”','“Elena? Nahi. Yahan koi nahi aata. Koi jaata bhi nahi.”','Wo mez pakad leta hai. “Usne Cell 4 ke baare mein poocha tha. Maine bola ghanta sab kholta hai. Mujhe nahi bolna chahiye tha. Almari dekho.”'],
+ c:{'P-1':['Sergeant ki notebook','Kaanpte haath se likha hai: “Almari ka code wo ghanta jo dohrata hai, phir cell number. Do baar mat likhna.”','Front office','Almari ka code kaise banta hai, ye batata hai.'],'P-2':['Cell log','Cell 4: Deputy Harlan Moss, 3:17 se band. Darwaza tab se nahi khula. Chhodne ki koi entry nahi hai.','Holding cells','Cell number batata hai.'],'P-3':['Pin kiya mugshot','Elena Vale ki photo, ek tag ke saath: “3:17 par Cell 4 gayi. Wapas nahi aayi.”','Records room','Elena ko Cell 4 aur Rook se jodta hai.'],'P-4':['Evidence tag','Tag 88: “Cassette 2, chaabi ki almari mein. Andhere ke baad mat bajana.”','Evidence room','Almari mein kya hai, ye pakka karta hai.']}},
+3:{i:'Shehar ke neeche, Underground Archive. Yahan har file par 3:17 ki tareekh hai. Hawa bhaari hai, aur andhera sun raha hai.',w:'Khatra: The Hollow aur tez hai aur battery jaldi khatam hoti hai. Teen galat code usko tumhare paas bula lenge.',h:'Din, phir mahina, phir ulta ghanta. Ledger aur aaine wale note mein numbers hain.',sn:'Archive ki vault',st:'Saat ankon ka dial: din, mahina, phir ulta ghanta.',v:'Vault khulti hai. Files ke peeche neeche jaati seedhi hai. Ek cassette mein Elena ki awaaz: “Ye Hollow House se shuru hua tha. Ghante se pehle aao.”',
+ np:['Archivist','Ek patla saaya dheere se mudta hai. “Yahan har file sach hai. Wo bhi jo abhi hui nahi.”','“Vale? Ye naam mere index mein nahi hai.”','Wo zaroorat se zyada der muskurata hai. “Chaudah November. Uske baad din ginna band ho gaya. Andhere se bacho, detective. Wo tumhe ginta hai.”'],
+ c:{'A-1':['Archive ka index card','“Vault ka code: jis din wo gayab hui, phir mahina, phir ulta ghanta.”','Index room','Vault ka code kaise banta hai, ye batata hai.'],'A-2':['Gumshuda logon ka ledger','Elena Vale: 14 November ko gayab. Entry ki syahi abhi geeli hai.','Ledger room','Din aur mahina batata hai: 14 aur 11.'],'A-3':['Aaine wala note','“Jo ghanta dohrata hai, 3:17, aaine mein 713 dikhta hai.”','Clock vault','Ulta ghanta batata hai.'],'A-4':['Phata diary page','Elena ne likha: “Archivist files rakhta hai. Hamein bhi rakhta hai. The Hollow koi jagah nahi, ek waqt hai.”','Reading room','Kahani ka raaz. Archivist wo nahi jo dikhta hai.'],'A-5':['Bell tower ki chaabi','Ek bhaari loha ki chaabi, tag par: “Bell Tower, aakhri raat ke liye.” Yahan kisi taale mein nahi lagti.','Lower stacks','Aage ke level mein kaam aayegi.']}},
+4:{i:'Jungle ke andar Research Facility aisi bijli se chal rahi hai jo usme nahi honi chahiye. Board par likha hai PROJECT HOLLOW, aur har ghadi 3:17 par ruki hai.',w:'Khatra: Blackout baar-baar aate hain aur andhere mein The Hollow tez chalta hai. Teen galat code usko bula lenge.',h:'Pehle badge number, phir asli subjects ki ginti. Ek note roster se alag baat kehta hai.',sn:'Lab terminal',st:'Paanch ankon ka keypad: badge number, phir subjects ki ginti.',v:'Terminal khul jaata hai. Ek video chalta hai: Elena 3:17 par chamber mein jaati hai aur footage dohrata rehta hai. Phir ek line aati hai: HOLLOW HOUSE JAO.',
+ np:['Dr. Voss','Daag lagi lab coat mein ek aurat mudti nahi. “Tum late ho. Experiment gyarah saal pehle khatam hua tha. Wo kabhi ruka nahi.”','“Elena Vale? Hamari staff list mein ye naam nahi hai.”','Uski awaaz tootti hai. “Usne badge 0482 liya aur chamber mein chali gayi. Subjects dhyaan se ginna. Hamne ginti ke baare mein jhooth bola tha.”'],
+ c:{'F-1':['Research memo','“Project Hollow. Terminal code: badge number, phir subjects ki ginti. Ye memo jala dena.”','Office','Terminal code kaise banta hai.'],'F-2':['Test log','“Chamber test 3:17 par shuru hua. Khatam hone ka time: darj nahi. Andar ki ghadiyan nahi ruki; ghanta ruk gaya.”','Control room','Ghanta har jagah dohrata hai.'],'F-3':['Elena ka badge','Staff badge 0482, E. Vale, Field Analyst. Photo khurach di gayi hai.','Security','Badge number batata hai.'],'F-4':['Jungle ka naqsha','Haath se bana naqsha. Bell tower par laal gola hai, aur uske aage Hollow House.','Map room','Aakhri jagah ka ishara.'],'F-5':['Subjects ka roster','Roster: Subject 1 se 7, sab “wapas” likhe hain. Koi dastkhat nahi.','Records','Official ginti: 7.'],'F-6':['Phata note','“Subject 8 kabhi log nahi hua. Wahi bahar aaya tha.”','Antechamber','Asli ginti 8 ho sakti hai.']}},
+5:{i:'Hollow House kisi naqshe mein kabhi nahi tha. Darwaza khula hai, barish ruk gayi hai, aur andar kahin ek jaani-pehchani awaaz gungunati hai.',w:'Aakhri level: blackout, sabse tez Hollow, aur sirf do galat code. Syahi par bharosa karo, kaagaz par nahi.',h:'Ghanta, phir kamra. Ek parchi jaali hai. Hotel ka register yaad karo.',sn:'Hollow darwaza',st:'Chaukhat ke andar chhe ankon ka dial: ghanta, phir kamra.',v:'Darwaza andar ki taraf khulta hai. Aage roshni ki lambi seedhi hai, aur Elena ki awaaz: “Wapas aane ke liye shukriya.”',
+ np:['Elena','Ek aurat deewar ki taraf muh karke khadi hai. Jab wo mudti hai, uski aankhein tumhari behen jaisi hain. “Adrian. Tum aa gaye. Tum late ho, aur jaldi bhi. Dono sach hain yahan.”','“Ghar par bharosa mat karo. Mujh par bhi nahi, jab tak mera chhoda hua na dikha do.”','Wo muskurati hai, aur ek pal ke liye barish ruk jaati hai. “Hollow kaagaz badalta hai, syahi nahi. Darwaza ghante aur sachche kamre ko jaanta hai. Jao, phir se 3:17 hone se pehle.”'],
+ c:{'H-1':['Darwaze par likhawat','Chaukhat ke upar khuda hai: “Ghanta, phir wo kamra jahan gayab hone wali ne shuru kiya.”','Foyer','Darwaze ka code kaise banta hai.'],'H-2':['Purani kamre ki chaabi','Peetal ka tag: “Room 6.” Blackwater Hotel mein Elena ka kamra.','Parlor','Ek kamra batata hai.'],'H-3':['Ruki hui jeb-ghadi','Ghadi 3:17 par ruki hai. Kaanch thanda hai, aur dial geela hai.','Library','Ghanta pakka karta hai.'],'H-4':['Hotel ki parchi','Parchi par “Room 9” likha hai. Likhawat lagbhag Elena jaisi hai. Lagbhag.','Study','Shak wali. Chaabi se mel nahi khaati.'],'H-5':['Bachche ki drawing','Ek lamba bina chehre ka saaya. Neeche: “Wo tabhi chalta hai jab koi nahi dekhta.”','Nursery','Hollow ka vyavhaar samjhata hai.'],'H-6':['Elena ka aakhri note','“Room 9 wali parchi jaali hai. Register par bharosa karo, parchi par nahi. Maine wahi kamra likha jahan se shuru hui.”','Cellar','Room 6 pakka karta hai, Room 9 nahi.']}}};
+for(const n in TX){const x=TX[n],d=LV[n];d.intro=x.i;d.warn=x.w;d.hint=x.h;d.win=x.v;d.safe.n=x.sn;d.safe.t=x.st;Object.assign(d.npc,{n:x.np[0],i:x.np[1],lie:x.np[2],sec:x.np[3]});d.clues.forEach(c=>{const y=x.c[c[0]];c[3]=y[0];c[5]=y[1];c[6]=y[2];c[7]=y[3];});}
+LV[2].name='Greywick Thana';LV[3].name='Zameen ke neeche ka Archive';LV[4].name='Jungle ki Research Facility';LV[1].safe.n='Deewar ki tijori';
+Object.assign(CL,{'C-001':['Mehmaan register','Gyarah saal purana ek panna: “E. Vale, Room 6, 3:17 baje check-in.” Syahi abhi bhi geeli hai.','Lobby ka desk','Elena ko yahan 3:17 par rakhta hai.'],'C-002':['Ruki hui ghadi','Office ki ghadi 3:17 par ruki hai. Battery nahi hai, phir bhi second ki sui hilti hai.','Peeche ka office','Wo ghanta jo dohrata hai. Shayad ek code.'],'C-003':['Phati hui photo','Elena chaar hotel staff ke saath. Peeche likha hai: “Sab ek hi ghante par ruk gaye. Orla se poocho.”','Storeroom','Elena ko staff se aur Orla se jodti hai.']});
+NL[1]['C-001'].name='Mehmaan register';NL[1]['C-002'].name='Ruki hui ghadi';NL[1]['C-003'].name='Phati hui photo';NL[1].safe.name='Deewar ki tijori';
+QN.length=0;QN.push('Kam','Madhyam','Zyada');SN.length=0;SN.push('Kam','Normal','Zyada');
+WH.length=0;WH.push('Elena ki bahut dheemi awaaz: “Nazar mat hatana.”','Deewarein saans andar leti hain. Phir baahar.','Kahin bachche ke hansne ki awaaz aati hai, par wo dikhta nahi.','Tumhare apne kadmon ki goonj peechhe se aati hai, ek pal der se.','Paas ki lakdi par 3:17 khuda hai. Pehle wo wahan nahi tha.','Peechhe ek ghadi ek baar tik karti hai.');
+LORE.length=0;LORE.push('Elena gyarah saal pehle 3:17 par check-in hui aur kabhi nikli nahi. Tab se hotel wahi raat dohra raha hai.','Deputy Moss Cell 4 mein hai, bina budhe. Sergeant Rook ne use us ghante mein band kiya. Police ko loop ka pata tha aur unhone chup rehna chuna.','Archivist logon ko files ki tarah darj karta hai. Elena 14 November ko darj hui. Files khud ko badal leti hain, aur The Hollow un khaali jagahon par palta hai.','Project Hollow ne waqt mein ek darwaza khola. Subject 8 galat ban kar nikla: wahi The Hollow hai. Wo tabhi chalta hai jab koi nahi dekhta, aur uske paas Elena ka badge hai.','Elena darwaza band rakhne ke liye loop mein ruki. Jo ghante mein khada hota hai wo Hollow ko Greywick ke andar rakhta hai. Ghar ek badli chahta hai.');
+for(const [s,t] of [['#bJ','Diary'],['#bP','Ruko'],['#bI','Interact karo'],['#bF','Torch']]){const e=document.querySelector(s);if(e)e.textContent=t;}
+function save(q){try{localStorage.setItem('hollowhour3d',JSON.stringify(S));if(!q)toast('Game save ho gaya.');return true;}catch(e){if(!q)toast('Yahan save nahi ho sakta.');return false;}}
+function objective(){const d=LV[S.level],n=d.ids.filter(i=>S.clues[i]).length,t=d.ids.length;$('obj').innerHTML='<b>Level '+S.level+' · '+d.name+'</b><br>'+(S.flags[d.sk]?'Level poora. Agle level ke liye Journal kholo.':n>=t?d.safe.n+' kholo.':'Saboot '+n+'/'+t+'. '+d.npc.n+' se baat karo.')+(d.drain?'<br>Battery '+Math.round(S.bat)+'%':'');}
+function hint(){if(S.level>1)return LV[S.level].hint;const n=Object.keys(S.clues).length;return S.flags.safeOpen?'Level ek poora ho gaya.':n<3?'Chamakti cheezein dhundho: lobby ka desk, peeche ka office aur storeroom.':'Ghadi aur register ka ek hi time hai. Usko chaar ankon mein try karo.';}
+function collect(id){if(S.clues[id])return;S.clues[id]=1;NODES[id].g.visible=false;if(id!=='C-002')NODES[id].o.visible=false;snd('clue');save(true);objective();if(S.level===1&&Object.keys(S.clues).length===2)setTimeout(scare,1800);panel(CL[id][0]+' <small style="color:#8b95a3">'+id+'</small>','<p>'+CL[id][1]+'</p><p class="un"><small>Journal mein jod diya gaya.</small></p>',[btn('Aage badho',close)]);}
+function journal(){const have=Object.keys(S.clues);let h='<p style="color:#8b95a3;font-size:14px">Detective Adrian Vale · Greywick case file</p>';
+ if(!have.length)h+='<p>Abhi koi saboot nahi.</p>';
+ for(const id of have)h+='<div class="cl"><b>'+id+' · '+CL[id][0]+'</b><br>'+CL[id][1]+'<small>Mila: '+CL[id][2]+' · '+CL[id][3]+' · <span class="ok">Jama</span></small></div>';
+ h+='<h2 style="margin-top:14px;font-size:16px">Saboot ka board</h2>';const t1=S.clues['C-001']&&S.clues['C-002'];
+ h+='<div class="cl"><b>Elena 3:17 par check-in hui</b><small>C-001 + C-002 chahiye · <span class="'+(t1?'ok':'un')+'">'+(t1?'Pakka':'Abhi pakka nahi')+'</span></small></div>';
+ const t2=S.clues['C-003']&&S.flags.orlaDenied;h+='<div class="cl"><b>Orla kuch chhupa rahi hai</b><small>C-003 + ek contradiction chahiye · <span class="'+(t2?'ok':'un')+'">'+(t2?'Pakka':'Abhi pakka nahi')+'</span></small></div>';
+ if(S.flags.orlaDenied)h+='<div class="cl"><b class="bad">Contradiction</b><br>Orla ne kaha Elena yahan nahi thi, par register kuch aur kehta hai.</div>';
+ h+='<h2 style="margin-top:14px;font-size:16px">Saman</h2><p>'+(have.length?have.map(i=>CL[i][0]).join(', '):'Khaali')+(S.flags.safeOpen?', Elena ka recorder':'')+'</p><div class="cl"><b>Ishara</b><br>'+hint()+'</div>';
+ panel('Jaanch ka Journal',h+loreHtml(),(S.flags[LV[S.level].sk]&&S.level<5?[btn('Agla level',nextLevel,'ac'),btn('Band karo',close)]:[btn('Band karo',close)]));}
+function talk(){const reg=!!S.clues['C-001'],ph=!!S.clues['C-003'];
+ const say=(who,txt)=>{const bs=[];
+  bs.push(btn('“Kya aapne Elena Vale ko dekha hai?”',()=>{if(S.flags.orlaCracked)say('Orla','“Wo ghante par aayi thi. Us ghante se kabhi nikli nahi.”');else{S.flags.orlaDenied=1;say('Orla',reg?'“Is naam ka koi yahan nahi ruka, detective.” Uska haath counter par kaanp raha hai.':'“Vale? Nahi. Hamara register saaf hai. Aap kyun poochh rahe hain?”');}}));
+  bs.push(btn('“3:17 par kya hota hai?”',()=>say('Orla','Wo khidki ki taraf dekhti hai. “3:17 par kuch nahi hota, detective. Wahi to darr hai. Phir kuch kabhi nahi hilta. Sirf mehmaan.”')));
+  bs.push(btn('“Ye hotel ruka hua kyun lagta hai?”',()=>say('Orla','“Greywick ki barish aisi hi hai. Log ghadiyan dekhna bhool jaate hain.”')));
+  if(reg)bs.push(btn('Usko guest register dikhao (C-001)',()=>{S.flags.orlaCracked=1;save(true);say('Orla','Uska chehra safed pad jaata hai. “Wo panna jala diya gaya tha. …Us raat office ki ghadi ruk gayi. Peeche ki tijori ghante par khulti hai. Ab ek shabd nahi.”');},'ac'));
+  if(ph)bs.push(btn('Usko phati hui photo dikhao (C-003)',()=>say('Orla','“Wo chaaron ab nahi hain. Bas main bachi hoon. Please, usko mujhse pehle dhundh lo.”')));
+  bs.push(btn('Chalo',close));panel(who,'<p>'+txt+'</p>',bs);};
+ say('Mrs. Orla Finch','Clerk apne ledger se upar dekhti hai. “Raat ke liye kamra chahiye, ya kisi ko dhundh rahe ho?”');}
+function safe(){if(S.level>1)return safeL();if(S.flags.safeOpen){toast('Tijori ab khaali hai.');return;}
+ panel('Deewar ki tijori','<p>Chaar ankon ka dial. Neeche khuda hai: “Sirf wo ghanta jo dohrata hai.”</p><input id="code" inputmode="numeric" maxlength="4" placeholder="----"><p id="fb" class="bad" style="min-height:20px"></p>',
+ [btn('Code try karo',()=>{const v=$('code').value;if(v==='0317'){S.flags.safeOpen=1;save(true);snd('open');objective();panel('Tijori khul gayi','<p>Andar ek chhota cassette recorder hai. Tum play dabate ho. Static, phir ek awaaz jo gyarah saal se nahi suni:</p><p><i>“Adrian, agar tum sun rahe ho, to ghante par bharosa mat karna…”</i></p><p class="ok">Level 1 poora. Level 2 intezaar kar raha hai.</p>',[btn('Agla level',nextLevel,'ac'),btn('Yahin raho',close)]);}else{snd('bad');$('fb').textContent=v.length<4?'Chaar ank daalo.':'Galat code. Kuch nahi hua.';}},'ac'),btn('Peechhe hato',close)]);}
+function safeL(){const d=LV[S.level],n=S.level,L=d.code.length;if(S.flags[d.sk]){toast('Pehle hi khul chuka hai.');return;}
+ panel(d.safe.n,'<p>'+d.safe.t+'</p><input id="code" inputmode="numeric" maxlength="'+L+'" placeholder="'+'-'.repeat(L)+'"><p id="fb" class="bad" style="min-height:20px"></p>',[btn('Code try karo',()=>{const v=$('code').value;
+  if(v===d.code){S.flags[d.sk]=1;save(true);snd('open');objective();panel('Khul gaya','<p>'+d.win+'</p>',[n<5?btn('Agla level',nextLevel,'ac'):btn('Khatam',ending,'ac'),btn('Yahin raho',close)]);return;}
+  snd('bad');if(v.length<L){$('fb').textContent=L+' ank daalo.';return;}
+  S.wrong=(S.wrong||0)+1;$('fb').textContent='Galat code.'+(d.tries?' ('+Math.max(0,d.tries-S.wrong)+' mauke bache)':'');
+  if(d.tries&&S.wrong>=d.tries){S.wrong=0;close();toast('Dial cheekh uthta hai. The Hollow paas hai…');watcher.position.set(S.px+Math.sin(S.yaw)*4,0,S.pz+Math.cos(S.yaw)*4);}},'ac'),btn('Peechhe hato',close)]);}
+function talkL(){const n=LV[S.level].npc,fk='sec'+S.level;const say=t=>{const bs=[btn('“Kya aapne Elena Vale ko dekha hai?”',()=>say(S.flags[fk]?'“Wo ab bhi yahin hai. Us ghante mein.”':n.lie)),btn('“Ye jagah kya chhupa rahi hai?”',()=>say('“Kuch bhi jo milna nahi chahta.”'))];if(S.clues[n.need])bs.push(btn(CL[n.need][0]+' dikhao ('+n.need+')',()=>{S.flags[fk]=1;save(true);say(n.sec);},'ac'));bs.push(btn('Chalo',close));panel(n.n,'<p>'+t+'</p>',bs);};say(n.i);}
+function nextLevel(){close();S.flash=true;S.wrong=0;enterLevel(S.level+1,false);save(true);const d=LV[S.level];panel('Level '+S.level+' · '+d.name,'<p>'+d.intro+'</p><p class="bad"><small>'+d.warn+'</small></p>',[btn('Shuru karo',close,'ac')]);}
+function ending(){panel('The Hollow Hour','<p>Elena ki awaaz static mein kho jaati hai. Tumhara phone buzz karta hai: ek naya voicemail, gyarah saal pehle ka, tumhare hi number se. Tumhari hi awaaz mein: “Adrian, Greywick mat aana.” Kahin upar ghanta bajta hai, aur har ghadi 3:17 par ruk jaati hai.</p><p class="ok">The Hollow House khamosh ho jaata hai. Abhi ke liye. Khelne ke liye shukriya. Aur chapters aa rahe hain.</p>',[btn('Main menu',toMenu,'ac')]);}
+function caught(){S.deaths=(S.deaths||0)+1;snd('bad');lt=1;toast('The Hollow ne tumhe pakad liya. Tum entrance par jaagte ho…');const d=LV[S.level];S.px=d.start[0];S.pz=d.start[1];S.yaw=d.start[2];wkReset();}
+function takeBat(id){S.flags['g'+id]=1;NODES[id].o.visible=false;NODES[id].g.visible=false;S.bat=Math.min(100,S.bat+45);snd('click');toast('Extra battery: +45%');save(true);objective();}
+function scare(){if(S.level!==1||wk.on)return;watcher.visible=true;watcher.position.set(S.px-Math.sin(S.yaw)*5,0,S.pz-Math.cos(S.yaw)*5);toast('Wahan kuch khada tha.');snd('thunder');setTimeout(()=>{if(!wk.on)watcher.visible=false;},1400);}
+function settings(){panel('Settings','',[btn('Graphics: '+QN[S.q],()=>{setQ((S.q+1)%3);save(true);settings();}),btn('Dekhne ki speed: '+SN[S.sens<.9?0:S.sens>1.1?2:1],()=>{S.sens=S.sens<.9?1:S.sens>1.1?.6:1.5;save(true);settings();}),btn('Awaaz: '+(muted?'Band':'Chalu'),()=>{muted=!muted;if(MG)MG.gain.value=muted?0:1;settings();}),btn('Wapas',pause,'ac')]);}
+function pause(){if(!running)return;if(ovOpen&&!paused)return;paused=true;panel('Ruka hua','',[btn('Jaari rakho',()=>{close();paused=false;},'ac'),btn('Journal',()=>{paused=false;journal();}),btn('Settings',settings),btn('Game save karo',()=>save()),btn('Save kiya hua load karo',()=>{if(load()){setQ(S.q);enterLevel(S.level||1,true);toast('Game load ho gaya.');close();paused=false;}else toast('Koi save nahi mila.');}),btn('Main menu',toMenu)]);}
+function start(cont){if(cont){if(!load())return;}else Object.assign(S,{px:3,pz:9,yaw:-Math.PI/2,pitch:0,clues:{},flags:{},flash:true,level:1,bat:100,deaths:0,wrong:0});
+ for(const q of [2,3,4,5])LV[q].clues.forEach(c=>{CL[c[0]]=[c[3],c[5],c[6],c[7]];});enterLevel(S.level||1,cont);
+ setQ(S.q);$('menu').style.display='none';$('hud').style.display='block';audioInit();running=true;paused=false;objective();
+ if(!cont)panel('Voicemail · 3:17 a.m.','<p style="color:#8b95a3;font-size:14px">Gyarah saal pehle aaya. Aaj raat suna gaya.</p><p><i>“Adrian… main hoon. Agar tumhe ye mile, main Greywick mein hoon. Blackwater Hotel. Ghanta dohrata rehta hai, aur main ise rok nahi paa rahi…”</i></p><p>Tum barish mein gaadi chalate ho. Lobby khaali hai, ghadi galat hai, aur register khula hai. Usmein har mehmaan ne 3:17 par dastkhat kiye hain. Tumhare peeche darwaza apne aap band ho jaata hai.</p>',[btn('Andar jao',close,'ac')]);else toast('Wapas swagat hai, Detective.');}
+size();setQ(S.q);requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
