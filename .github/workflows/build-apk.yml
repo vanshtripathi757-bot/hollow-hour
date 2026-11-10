@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -37,7 +38,14 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install npm dependencies
-        run: npm install
+        run: npm install --no-audit --no-fund
+
+      - name: Bundle Three.js locally
+        run: |
+          mkdir -p www/vendor
+          cp node_modules/three/build/three.min.js www/vendor/three.min.js
+          test -s www/vendor/three.min.js
+          ! grep -R -n "cdnjs.cloudflare.com/ajax/libs/three.js" index.html www/index.html
 
       - name: Generate Android project
         run: npx cap add android
@@ -45,15 +53,52 @@ jobs:
       - name: Sync web game into Android project
         run: npx cap sync android
 
+      - name: Audit Android manifest permissions
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          root = ET.parse(manifest).getroot()
+          ns = "{http://schemas.android.com/apk/res/android}"
+          permissions = sorted({node.attrib.get(ns + "name", "") for node in root.findall("uses-permission")})
+          print("Android permissions declared:")
+          for permission in permissions:
+              print(" - " + permission)
+          blocked = ("SEND_SMS", "RECEIVE_SMS", "READ_SMS", "READ_CONTACTS",
+                     "WRITE_CONTACTS", "GET_ACCOUNTS", "READ_CALL_LOG",
+                     "WRITE_CALL_LOG", "CALL_PHONE", "READ_PHONE_STATE",
+                     "RECORD_AUDIO", "CAMERA", "ACCESS_FINE_LOCATION",
+                     "ACCESS_COARSE_LOCATION", "REQUEST_INSTALL_PACKAGES",
+                     "RECEIVE_BOOT_COMPLETED", "SYSTEM_ALERT_WINDOW",
+                     "BIND_ACCESSIBILITY_SERVICE", "READ_EXTERNAL_STORAGE",
+                     "WRITE_EXTERNAL_STORAGE", "MANAGE_EXTERNAL_STORAGE")
+          unexpected = [p for p in permissions if any(p.endswith(x) for x in blocked)]
+          if unexpected:
+              raise SystemExit("Unexpected sensitive permissions found: " + ", ".join(unexpected))
+          PY
+
       - name: Build debug APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew --no-daemon assembleDebug
 
-      - name: Upload APK artifact
+      - name: Verify APK and generate checksum
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          sha256sum "$APK" | tee android/app-debug.apk.sha256
+
+      - name: Upload APK and audit report
         uses: actions/upload-artifact@v4
         with:
           name: The-Hollow-Hour-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app-debug.apk.sha256
+            android/app/src/main/AndroidManifest.xml
           if-no-files-found: error
+
+# A Play Store-ready release build needs a private signing keystore.
+# Do not commit keystore files or passwords to this repository.
