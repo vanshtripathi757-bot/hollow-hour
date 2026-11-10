@@ -99,5 +99,6 @@ jobs:
             android/app/src/main/AndroidManifest.xml
           if-no-files-found: error
 
+# Latest workflow: install dependencies without setup-node npm cache, so no lockfile is required.
 # A Play Store-ready release build needs a private signing keystore.
 # Do not commit keystore files or passwords to this repository.
