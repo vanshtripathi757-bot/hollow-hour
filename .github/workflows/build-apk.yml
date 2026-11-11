@@ -94,7 +94,7 @@ jobs:
           test -s "$APK"
           mkdir -p release
           cp "$APK" release/app-debug.apk
-          sha256sum release/app-debug.apk | tee release/app-debug.apk.sha256
+          (cd release && sha256sum app-debug.apk > app-debug.apk.sha256)
           cp android/app/src/main/AndroidManifest.xml release/AndroidManifest.xml
           test -s release/app-debug.apk
 
