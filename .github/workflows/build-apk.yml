@@ -88,22 +88,22 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
 
-      - name: Verify APK and generate checksum
+      - name: Prepare easy-to-install artifact
         run: |
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          sha256sum "$APK" | tee android/app-debug.apk.sha256
+          mkdir -p release
+          cp "$APK" release/app-debug.apk
+          sha256sum release/app-debug.apk | tee release/app-debug.apk.sha256
+          cp android/app/src/main/AndroidManifest.xml release/AndroidManifest.xml
+          test -s release/app-debug.apk
 
-      - name: Upload APK and audit report
+      - name: Upload APK at ZIP root
         uses: actions/upload-artifact@v4
         with:
           name: The-Hollow-Hour-APK
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app-debug.apk.sha256
-            android/app/src/main/AndroidManifest.xml
+          path: release/*
           if-no-files-found: error
 
-# Latest workflow: install dependencies without setup-node npm cache, so no lockfile is required.
-# A Play Store-ready release build needs a private signing keystore.
-# Do not commit keystore files or passwords to this repository.
+# This produces a debug-signed APK for direct testing, not a Play Store release.
+# Keep signing keystores and passwords out of the repository.
