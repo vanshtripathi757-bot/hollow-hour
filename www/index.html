@@ -72,7 +72,7 @@ const QN=['Low','Medium','High'],SN=['Low','Normal','High'];
 const R=new T.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
 R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.25;
 document.body.prepend(R.domElement);
-const scene=new T.Scene();scene.background=new T.Color(0x04060a);scene.fog=new T.FogExp2(0x05080d,.075);
+const scene=new T.Scene();scene.background=new T.Color(0x04060a);scene.fog=new T.FogExp2(0x09111a,.032);
 const cam=new T.PerspectiveCamera(72,1,.05,60);cam.rotation.order='YXZ';scene.add(cam);let built=[];const _sa=scene.add.bind(scene);scene.add=function(...a){a.forEach(x=>{if(x!==cam&&!x.isHemisphereLight)built.push(x);});return _sa(...a);};
 function size(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
 addEventListener('resize',size);
@@ -165,7 +165,7 @@ regN('stairs0',mkStairs(0,0,'Stairs up'));regN('stairs1',mkStairs(H+.02,1,'Stair
 function climb(){S.up=!S.up;S.px=4.6;S.pz=12.4;snd('step');toast(S.up?'You climbed to the upper floor.':'You came back down.');}
 const mistT=tex(128,128,g=>{for(let i=0;i<40;i++){const x=Math.random()*128,y=Math.random()*128,r=10+Math.random()*26,gr=g.createRadialGradient(x,y,1,x,y,r);gr.addColorStop(0,'rgba(200,215,235,.35)');gr.addColorStop(1,'rgba(200,215,235,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);}});
 const mists=[];
-function amb(mp,w,h){const t=mistT.clone();t.needsUpdate=true;t.repeat.set(w/2,h/2);const m=new T.Mesh(new T.PlaneGeometry(w*C,h*C),new T.MeshBasicMaterial({map:t,transparent:true,opacity:.2,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(w*C/2,.45,h*C/2);scene.add(m);mists.push(t);
+function amb(mp,w,h){const t=mistT.clone();t.needsUpdate=true;t.repeat.set(w/2,h/2);const m=new T.Mesh(new T.PlaneGeometry(w*C,h*C),new T.MeshBasicMaterial({map:t,transparent:true,opacity:.075,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(w*C/2,.45,h*C/2);scene.add(m);mists.push(t);
  for(let i=0,k=0;i<8&&k<200;k++){const c=1+((Math.random()*(w-2))|0),r=1+((Math.random()*(h-2))|0);if(mp[r][c]!=='.')continue;const p=new T.Mesh(new T.CircleGeometry(.5+Math.random()*.6,20),new T.MeshStandardMaterial({color:0x0b1520,roughness:.03,metalness:.7,transparent:true,opacity:.85,polygonOffset:true,polygonOffsetFactor:-3}));p.rotation.x=-Math.PI/2;p.position.set(c*C+Math.random()*C,.02,r*C+Math.random()*C);p.receiveShadow=true;scene.add(p);i++;}}
 const SH={};function addShards(n,mp,w,h){const arr=[];for(let i=0,k=0;i<4&&k<300;k++){const c=1+((Math.random()*(w-2))|0),r=1+((Math.random()*(h-2))|0);if(mp[r][c]!=='.')continue;const x=(c+.5)*C,z=(r+.5)*C,m=new T.Mesh(new T.OctahedronGeometry(.13),new T.MeshBasicMaterial({color:0x66ccff}));m.position.set(x,.8,z);scene.add(m);const g=glow(x,.8,z);g.material.color.set(0x66ccff);g.scale.set(.5,.5,1);arr.push({m,g,x,z,id:'sh'+n+'_'+i});i++;}SH[n]=arr;}
 addShards(1,MAP,20,10);
