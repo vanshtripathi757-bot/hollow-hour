@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -39,15 +40,19 @@ jobs:
       - name: Install npm dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Bundle Three.js locally
+      - name: Bundle pinned Three.js locally
         run: |
           mkdir -p www/vendor
-          cp node_modules/three/build/three.min.js www/vendor/three.min.js
+          cp vendor/three.min.js www/vendor/three.min.js
+          test -s vendor/three.min.js
           test -s www/vendor/three.min.js
           ! grep -R -n "cdnjs.cloudflare.com/ajax/libs/three.js" index.html www/index.html
 
       - name: Generate Android project
-        run: npx cap add android
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
 
       - name: Sync web game into Android project
         run: npx cap sync android
