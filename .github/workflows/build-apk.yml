@@ -82,27 +82,6 @@ jobs:
               raise SystemExit("Unexpected sensitive permissions found: " + ", ".join(unexpected))
           PY
 
-      - name: Package offline web game
-        run: |
-          mkdir -p offline-package/vendor
-          cp index.html offline-package/index.html
-          cp vendor/three.min.js offline-package/vendor/three.min.js
-          cat > offline-package/README.txt <<'EOF'
-The Hollow Hour - Offline Web Package
-1. Keep index.html and the vendor folder together.
-2. Open index.html in a modern browser.
-3. Three.js is bundled locally; no CDN download is needed.
-EOF
-          cd offline-package
-          zip -r ../The-Hollow-Hour-Offline-Web.zip .
-
-      - name: Upload offline web package
-        uses: actions/upload-artifact@v4
-        with:
-          name: The-Hollow-Hour-Offline-Web
-          path: The-Hollow-Hour-Offline-Web.zip
-          if-no-files-found: error
-
       - name: Build debug APK
         working-directory: android
         run: |
