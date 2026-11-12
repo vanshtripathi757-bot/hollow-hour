@@ -69,8 +69,8 @@ const solid=(x,z)=>MAP[Math.floor(z/C)]?.[Math.floor(x/C)]!=='.';
 const S={px:3,pz:9,yaw:-Math.PI/2,pitch:0,clues:{},flags:{},flash:true,q:1,sens:1,level:1,bat:100,deaths:0,wrong:0};
 const QN=['Low','Medium','High'],SN=['Low','Normal','High'];
 // Renderer
-const R=new T.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
-R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.25;
+const R=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.32;
 document.body.prepend(R.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x04060a);scene.fog=new T.FogExp2(0x09111a,.032);
 const cam=new T.PerspectiveCamera(72,1,.05,60);cam.rotation.order='YXZ';scene.add(cam);let built=[];const _sa=scene.add.bind(scene);scene.add=function(...a){a.forEach(x=>{if(x!==cam&&!x.isHemisphereLight)built.push(x);});return _sa(...a);};
@@ -252,7 +252,7 @@ spot.shadow.mapSize.set(1024,1024);spot.shadow.bias=-.0004;spot.shadow.camera.ne
 const DN=160,dpos=new Float32Array(DN*3),dbase=new Float32Array(DN*3);for(let i=0;i<DN*3;i++)dbase[i]=Math.random()*8;
 const dgeo=new T.BufferGeometry();dgeo.setAttribute('position',new T.BufferAttribute(dpos,3));const dust=new T.Points(dgeo,new T.PointsMaterial({color:0xbfc8d8,size:.03,transparent:true,opacity:.55,depthWrite:false}));dust.frustumCulled=false;scene.add(dust);
 const rc=new T.Raycaster();rc.far=3.4;
-function setQ(q){S.q=q;R.setPixelRatio(q===0?.55:q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,2));spot.castShadow=q>0;spot.shadow.mapSize.set(q===2?1024:512,q===2?1024:512);if(spot.shadow.map){spot.shadow.map.dispose();spot.shadow.map=null;}scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});size();}
+function setQ(q){S.q=q;R.setPixelRatio(q===0?.55:q===1?Math.min(devicePixelRatio,1.35):Math.min(devicePixelRatio,1.65));spot.castShadow=q>0;spot.shadow.mapSize.set(q===2?1536:q===1?1024:512,q===2?1536:q===1?1024:512);if(spot.shadow.map){spot.shadow.map.dispose();spot.shadow.map=null;}scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});size();}
 // Audio
 let AC=null,MG=null,muted=false,stepT=0;
 function audioInit(){if(AC){if(AC.state==='suspended')AC.resume();return;}
