@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>The Hollow Hour</title>
+<title>The Hollow Hour — Greywick Case</title>
 <style>
 :root{--bg:#07090c;--fg:#d9dde3;--ac:#c9a45c;--pn:#12161b;--bd:#2a313a;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
@@ -34,6 +34,34 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #menu .sub{color:#8b95a3;font-style:italic;margin-bottom:18px}#menu .btn{width:250px}
 input#code{width:100%;font-size:28px;text-align:center;letter-spacing:.4em;background:#000;color:var(--ac);border:1px solid var(--bd);padding:10px;border-radius:6px;user-select:text;touch-action:auto}
 </style>
+
+<style id="visual-upgrade">
+:root{--bg:#05070b;--fg:#e8e4dc;--ac:#e3b96f;--pn:rgba(12,16,23,.94);--bd:#756044}
+html,body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#030509;color:var(--fg)}
+canvas{filter:contrast(1.08) saturate(1.12)}
+#vig{background:radial-gradient(ellipse at 50% 45%,transparent 25%,rgba(0,0,0,.42) 72%,#000 100%)}
+#vig::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,18,30,.16),transparent 35%,rgba(28,10,8,.16));mix-blend-mode:screen}
+#menu{background:radial-gradient(ellipse at 50% 18%,rgba(54,69,86,.72),rgba(12,17,25,.96) 42%,#020306 100%);gap:15px}
+#menu:before{content:"CASE FILE 001  /  GREYWICK INCIDENT";color:#9c8b6c;font:600 10px system-ui;letter-spacing:.34em;border:1px solid #9b80504d;padding:9px 13px;border-radius:3px}
+#menu h1{font-family:Georgia,serif;font-weight:700;letter-spacing:.19em;line-height:1.12;text-shadow:0 0 22px #d9a85a55,0 5px 24px #000;font-size:clamp(30px,9vw,52px)}
+#menu .sub{font-style:normal;letter-spacing:.13em;text-transform:uppercase;font-size:10px;color:#b9ad98;margin:0 0 18px}
+.btn{background:linear-gradient(145deg,rgba(31,38,48,.96),rgba(10,13,18,.98));border:1px solid #766347;color:#e9e2d5;border-radius:8px;box-shadow:0 5px 18px #0007,inset 0 1px #ffffff12;transition:transform .12s,border-color .12s,background .12s}
+.btn:active{transform:scale(.97);background:#3a3023}
+.btn.ac{background:linear-gradient(135deg,#72542d,#30251a);border-color:#e0b96e;color:#ffe5b2;box-shadow:0 0 20px #dca65325,inset 0 1px #fff3}
+#menu .btn{width:min(290px,88vw);padding:14px 18px;text-align:center;font-weight:650;letter-spacing:.04em}
+#obj{max-width:68%;background:linear-gradient(110deg,#080b10eF,#101722d9);border:1px solid #c69a554d;border-left:3px solid var(--ac);box-shadow:0 5px 20px #0008;backdrop-filter:blur(8px);line-height:1.45}
+#top .btn,#acts .btn{backdrop-filter:blur(8px);border-color:#c9a45c77;box-shadow:0 5px 18px #0009}
+#joy{background:radial-gradient(circle,#ffffff18,#11192370);border:2px solid #e1c38a66;box-shadow:0 0 22px #0009,inset 0 0 20px #0008;backdrop-filter:blur(3px)}
+#knob{background:radial-gradient(circle at 35% 30%,#fff9,#b7a17b99);box-shadow:0 2px 12px #0009;border:1px solid #fff8}
+#prompt{background:#090d14ed;border:1px solid #d5ad6a99;box-shadow:0 5px 20px #000b;backdrop-filter:blur(8px);font-weight:650;letter-spacing:.03em}
+#toast{background:#090d14f2;border:1px solid #d5ad6a;box-shadow:0 8px 28px #000b;backdrop-filter:blur(8px)}
+#op{background:linear-gradient(145deg,#171d27f7,#080b11fa);border:1px solid #b18b555e;box-shadow:0 18px 60px #000d;backdrop-filter:blur(14px);border-radius:14px;padding:20px}
+#op h2{font-family:Georgia,serif;font-weight:700;letter-spacing:.035em;text-shadow:0 0 16px #d3a45c38}
+#op p{line-height:1.62;color:#ddd7ca}
+.cl{background:linear-gradient(100deg,#c69a5510,#0002);border-left-color:#dcb66d;border-radius:0 7px 7px 0}
+@media(max-width:420px){#joy{width:112px;height:112px;left:15px}#knob{left:36px;top:36px}#acts{right:12px}#acts .btn{width:82px;padding:11px 3px}#obj{font-size:12px;max-width:65%}#top .btn{font-size:12px;padding:8px 10px}}
+</style>
+
 </head>
 <body>
 <div id="vig"></div>
@@ -56,14 +84,14 @@ const T=THREE,C=2,H=2.6;let MW=20,MH=10;
 let MAP=["####################","#......#.....#.....#","#......#.....#.....#","#......#.....#.....#","#..................#","#......#.....#.....#","#......###.###.#####","#......#.....#.....#","#......#.....#.....#","####################"];
 const solid=(x,z)=>MAP[Math.floor(z/C)]?.[Math.floor(x/C)]!=='.';
 const S={px:3,pz:9,yaw:-Math.PI/2,pitch:0,clues:{},flags:{},flash:true,q:1,sens:1,level:1,bat:100,deaths:0,wrong:0};
-const QN=['Low','Medium','High'],SN=['Low','Normal','High'];
+const QN=['Kam','Medium','High'],SN=['Dheemi','Normal','Tez'];
 // Renderer
-const R=new T.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
-R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.25;
+const R=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance',stencil:false,depth:true});
+R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.38;R.physicallyCorrectLights=true;R.setClearColor(0x05070b,1);
 document.body.prepend(R.domElement);
 const scene=new T.Scene();scene.background=new T.Color(0x04060a);scene.fog=new T.FogExp2(0x05080d,.075);
 const cam=new T.PerspectiveCamera(72,1,.05,60);cam.rotation.order='YXZ';scene.add(cam);let built=[];const _sa=scene.add.bind(scene);scene.add=function(...a){a.forEach(x=>{if(x!==cam&&!x.isHemisphereLight)built.push(x);});return _sa(...a);};
-function size(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+function size(){R.setPixelRatio(Math.min(window.devicePixelRatio||1,S.q===0?1:S.q===1?1.5:2));R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
 addEventListener('resize',size);
 // Textures
 const nz=(g,w,h,a)=>{for(let i=0;i<w*h/6;i++){g.fillStyle='rgba(0,0,0,'+Math.random()*a+')';g.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*3,1);}};
@@ -241,7 +269,7 @@ spot.shadow.mapSize.set(1024,1024);spot.shadow.bias=-.0004;spot.shadow.camera.ne
 const DN=160,dpos=new Float32Array(DN*3),dbase=new Float32Array(DN*3);for(let i=0;i<DN*3;i++)dbase[i]=Math.random()*8;
 const dgeo=new T.BufferGeometry();dgeo.setAttribute('position',new T.BufferAttribute(dpos,3));const dust=new T.Points(dgeo,new T.PointsMaterial({color:0xbfc8d8,size:.03,transparent:true,opacity:.55,depthWrite:false}));dust.frustumCulled=false;scene.add(dust);
 const rc=new T.Raycaster();rc.far=3.4;
-function setQ(q){S.q=q;R.setPixelRatio(q===0?.55:q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,2));spot.castShadow=q>0;spot.shadow.mapSize.set(q===2?1024:512,q===2?1024:512);if(spot.shadow.map){spot.shadow.map.dispose();spot.shadow.map=null;}scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});size();}
+function setQ(q){S.q=q;R.setPixelRatio(Math.min(window.devicePixelRatio||1,q===0?1:q===1?1.5:2));R.shadowMap.enabled=q>0;spot.castShadow=q>0;spot.shadow.mapSize.set(q===2?1024:512,q===2?1024:512);if(spot.shadow.map){spot.shadow.map.dispose();spot.shadow.map=null;}scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});size();}
 // Audio
 let AC=null,MG=null,muted=false,stepT=0;
 function audioInit(){if(AC){if(AC.state==='suspended')AC.resume();return;}
@@ -307,14 +335,14 @@ function safe(){if(S.level>1)return safeL();if(S.flags.safeOpen){toast('The safe
  panel('Wall Safe','<p>A four-digit dial. Scratched beneath it: “Only the hour that repeats.”</p><input id="code" inputmode="numeric" maxlength="4" placeholder="----"><p id="fb" class="bad" style="min-height:20px"></p>',
  [btn('Try code',()=>{const v=$('code').value;if(v==='0317'){S.flags.safeOpen=1;save(true);snd('open');objective();panel('The safe opens','<p>Inside is a small cassette recorder. You press play. Static, then a voice you have not heard in eleven years:</p><p><i>“Adrian, if you hear this, don’t trust the hour…”</i></p><p class="ok">End of Level 1. Level 2 awaits.</p>',[btn('Next level',nextLevel,'ac'),btn('Stay',close)]);}else{snd('bad');$('fb').textContent=v.length<4?'Enter four digits.':'Wrong code. Nothing happens.';}},'ac'),btn('Step back',close)]);}
 function interact(){if(S.hid&&running&&!paused&&!ovOpen){hideToggle();return;}if(!running||paused||ovOpen||!near)return;const n=NODES[near];if(n.type==='clue')collect(near);else if(n.type==='npc')(S.level===1?talk:talkL)();else if(n.type==='bat')takeBat(near);else if(n.type==='diary')readDiary(near);else if(n.type==='hide')hideToggle(near);else if(n.type==='stairs')climb();else safe();}
-function settings(){const mk=()=>{panel('Settings','',[btn('Graphics: '+QN[S.q],()=>{setQ((S.q+1)%3);save(true);settings();}),btn('Look sensitivity: '+SN[S.sens<.9?0:S.sens>1.1?2:1],()=>{S.sens=S.sens<.9?1:S.sens>1.1?.6:1.5;save(true);settings();}),btn('Sound: '+(muted?'Off':'On'),()=>{muted=!muted;if(MG)MG.gain.value=muted?0:1;settings();}),btn('Back',pause,'ac')]);};mk();}
-function pause(){if(!running)return;if(ovOpen&&!paused)return;paused=true;panel('Paused','',[btn('Resume',()=>{close();paused=false;},'ac'),btn('Journal',()=>{paused=false;journal();}),btn('Settings',settings),btn('Save game',()=>save()),btn('Load saved game',()=>{if(load()){setQ(S.q);enterLevel(S.level||1,true);toast('Game loaded.');close();paused=false;}else toast('No save found.');}),btn('Main menu',()=>{close();paused=false;running=false;$('hud').style.display='none';$('menu').style.display='flex';$('mCont').style.display=hasSave()?'block':'none';})]);}
+function settings(){const mk=()=>{panel('Settings','',[btn('Graphics: '+QN[S.q],()=>{setQ((S.q+1)%3);save(true);settings();}),btn('Look sensitivity: '+SN[S.sens<.9?0:S.sens>1.1?2:1],()=>{S.sens=S.sens<.9?1:S.sens>1.1?.6:1.5;save(true);settings();}),btn('Sound: '+(muted?'Off':'On'),()=>{muted=!muted;if(MG)MG.gain.value=muted?0:1;settings();}),btn('Wapas',pause,'ac')]);};mk();}
+function pause(){if(!running)return;if(ovOpen&&!paused)return;paused=true;panel('Paused','',[btn('Jaari rakho',()=>{close();paused=false;},'ac'),btn('Journal',()=>{paused=false;journal();}),btn('Settings',settings),btn('Game save karo',()=>save()),btn('Saved game kholo',()=>{if(load()){setQ(S.q);enterLevel(S.level||1,true);toast('Game loaded.');close();paused=false;}else toast('No save found.');}),btn('Main menu',()=>{close();paused=false;running=false;$('hud').style.display='none';$('menu').style.display='flex';$('mCont').style.display=hasSave()?'block':'none';})]);}
 function start(cont){if(cont){if(!load())return;}else Object.assign(S,{px:3,pz:9,yaw:-Math.PI/2,pitch:0,clues:{},flags:{},flash:true,level:1,bat:100,deaths:0,wrong:0});
  for(const q of [2,3,4,5])LV[q].clues.forEach(c=>{CL[c[0]]=[c[3],c[5],c[6],c[7]];});enterLevel(S.level||1,cont);
  setQ(S.q);$('menu').style.display='none';$('hud').style.display='block';audioInit();running=true;paused=false;objective();
  if(!cont)panel('Voicemail · 3:17 a.m.','<p style="color:#8b95a3;font-size:14px">Received eleven years ago. Played tonight.</p><p><i>“Adrian… it’s me. If you get this, I’m in Greywick. Blackwater Hotel. The hour keeps repeating, and I can’t make it stop…”</i></p><p>You drive through the rain. The lobby is empty, the clock is wrong, and the register is open. Every guest in it signed at 3:17. Behind you, the door closes by itself.</p>',[btn('Step inside',close,'ac')]);else toast('Wapas swagat hai, Detective.');}
 function startAt(n){start(false);if(n>1){close();S.flags={};enterLevel(n,false);const d=LV[n];panel('Level '+n+' · '+d.name,'<p>'+d.intro+'</p><p class="bad"><small>'+d.warn+'</small></p>',[btn('Begin',close,'ac')]);}}
-if($('mSel'))$('mSel').onclick=()=>{panel('Select Level','<p style="color:#8b95a3;font-size:14px">Jump to any level. Evidence from earlier levels is not carried over.</p>',[1,2,3,4,5].map(n=>btn('Level '+n+' · '+LV[n].name,()=>{close();startAt(n);})).concat([btn('Back',close)]));};
+if($('mSel'))$('mSel').onclick=()=>{panel('Select Level','<p style="color:#8b95a3;font-size:14px">Jump to any level. Evidence from earlier levels is not carried over.</p>',[1,2,3,4,5].map(n=>btn('Level '+n+' · '+LV[n].name,()=>{close();startAt(n);})).concat([btn('Wapas',close)]));};
 $('mNew').onclick=()=>start(false);$('mCont').onclick=()=>start(true);$('bI').onclick=interact;$('bF').onclick=()=>{if(S.bat<=0&&!S.flash){toast('Battery khatam ho gayi. Extra battery dhundho.');return;}S.flash=!S.flash;snd('click');};
 $('bJ').onclick=()=>{if(!ovOpen&&running)journal();};$('bP').onclick=pause;$('mCont').style.display=hasSave()?'block':'none';
 setInterval(()=>{if(running&&!paused&&!ovOpen)save(true);},20000);
@@ -326,7 +354,7 @@ function frame(t){requestAnimationFrame(frame);const bf=(LV[S.level].bo&&(t%2600
   const px2=S.px+mx,pz2=S.pz+mz;const hit=(x,z)=>solid(x+r,z)||solid(x-r,z)||solid(x,z+r)||solid(x,z-r)||Math.hypot(x-npcObj.position.x,z-npcObj.position.z)<.55;
   if(!hit(px2,S.pz))S.px=px2;if(!hit(S.px,pz2))S.pz=pz2;const mv=Math.hypot(mx,mz);if(mv>0){bob+=mv*5;stepT+=mv;if(stepT>1.5){stepT=0;snd('step');}}
   rc.setFromCamera({x:0,y:0},cam);near=null;const hs=rc.intersectObjects(pick,false);for(const h of hs){const id=h.object.userData.nid;if(id&&((NODES[id].fl||0)===(S.up?1:0))&&!(NODES[id].type==='clue'&&S.clues[id])&&!(NODES[id].type==='bat'&&S.flags['g'+id])&&!(NODES[id].type==='diary'&&S.flags['dy'+NODES[id].lv])){near=id;break;}}
-  const p=$('prompt');if(near){p.style.display='block';p.textContent=(NODES[near].type==='npc'?'Talk to ':NODES[near].type==='safe'?'Examine ':'Inspect ')+NODES[near].name;}else p.style.display='none';
+  const p=$('prompt');if(near){p.style.display='block';p.textContent=(NODES[near].type==='npc'?'Baat karo: ':NODES[near].type==='safe'?'Kholkar dekho: ':'Jaanch karo: ')+NODES[near].name;}else p.style.display='none';
   const dd=LV[S.level];if(dd.drain&&S.flash&&S.bat>0){S.bat=Math.max(0,S.bat-dd.drain*DF().d*dt);if(S.bat===0)toast('Torch ki battery khatam ho gayi.');}const bi=Math.floor(S.bat);if(frame.lb!==bi){frame.lb=bi;objective();}
   if(wk.on){const dx=S.px-watcher.position.x,dz=S.pz-watcher.position.z,dist=Math.hypot(dx,dz)||1,cosA=(-dx*-Math.sin(S.yaw)-dz*Math.cos(S.yaw))/dist,seen=S.flash&&S.bat>0&&cosA>.82&&dist<16;
    if(!seen&&!(S.hid&&dist<3)){const sp2=dd.spd*DF().s*(bf<1?1.5:1)*(wk.noisy>0?1.35:1)*dt;watcher.position.x+=dx/dist*sp2;watcher.position.z+=dz/dist*sp2;}watcher.rotation.y=Math.atan2(dx,dz);
@@ -362,7 +390,7 @@ Object.assign(CL,{'C-001':['Mehmaan register','Gyarah saal purana ek panna: “E
 
 WH.length=0;WH.push('Elena ki bahut dheemi awaaz: “Nazar mat hatana.”','Deewarein saans andar leti hain. Phir baahar.','Kahin bachche ke hansne ki awaaz aati hai, par wo dikhta nahi.','Tumhare apne kadmon ki goonj peechhe se aati hai, ek pal der se.','Paas ki lakdi par 3:17 khuda hai. Pehle wo wahan nahi tha.','Peechhe ek ghadi ek baar tik karti hai.');
 LORE.length=0;LORE.push('Elena gyarah saal pehle 3:17 par check-in hui aur kabhi nikli nahi. Tab se hotel wahi raat dohra raha hai.','Deputy Moss Cell 4 mein hai, bina budhe. Sergeant Rook ne use us ghante mein band kiya. Police ko loop ka pata tha aur unhone chup rehna chuna.','Archivist logon ko files ki tarah darj karta hai. Elena 14 November ko darj hui. Files khud ko badal leti hain, aur The Hollow un khaali jagahon par palta hai.','Project Hollow ne waqt mein ek darwaza khola. Subject 8 galat ban kar nikla: wahi The Hollow hai. Wo tabhi chalta hai jab koi nahi dekhta, aur uske paas Elena ka badge hai.','Elena darwaza band rakhne ke liye loop mein ruki. Jo ghante mein khada hota hai wo Hollow ko Greywick ke andar rakhta hai. Ghar ek badli chahta hai.');
-for(const [s,t] of [['#menu .sub','Chapter One · Blackwater Hotel · Greywick'],['#mNew','New Investigation'],['#mCont','Continue'],['#mMsg','Left stick to move · drag the right side to look · tap Interact near glowing objects'],['#bI','Interact'],['#bF','Light']]){const e=document.querySelector(s);if(e)e.textContent=t;}
+for(const [s,t] of [['#menu .sub','Adhyay 1 · Blackwater Hotel · Greywick'],['#mNew','Nayi Jaanch Shuru Karo'],['#mCont','Jaanch Jaari Rakho'],['#mMsg','Baaye joystick se chalo · daaye taraf swipe karke dekho · chamakti cheez ke paas Jaanch dabao'],['#bJ','Journal'],['#bP','Ruko'],['#bI','Jaanch'],['#bF','Torch']]){const e=document.querySelector(s);if(e)e.textContent=t;}
 function save(q){try{localStorage.setItem('hollowhour3d',JSON.stringify(S));if(!q)toast('Game save ho gaya.');return true;}catch(e){if(!q)toast('Yahan save nahi ho sakta.');return false;}}
 function objective(){const d=LV[S.level],n=d.ids.filter(i=>S.clues[i]).length,t=d.ids.length;$('obj').innerHTML='<b>Level '+S.level+' · '+d.name+'</b><br>'+(S.flags[d.sk]?'Level poora. Agle level ke liye Journal kholo.':n>=t?d.safe.n+' kholo.':'Saboot '+n+'/'+t+'. '+d.npc.n+' se baat karo.')+(d.drain?'<br>Battery '+Math.round(S.bat)+'%':'');}
 function hint(){if(S.level>1)return LV[S.level].hint;const n=Object.keys(S.clues).length;return S.flags.safeOpen?'Level ek poora ho gaya.':n<3?'Chamakti cheezein dhundho: lobby ka desk, peeche ka office aur seedhiyon se upar ka storeroom.':'Ghadi aur register ka ek hi time hai. Usko chaar ankon mein try karo.';}
@@ -440,7 +468,7 @@ function safeL(){const d=LV[S.level],n=S.level,L=d.code.length;if(S.flags[d.sk])
 LV[6].clock=1;LV[8].clock=1;LV[6].safe.t='Ghante ki ginti aur manzil ko ghadi ka samay (HH:MM) maan lo. Haath set karo.';LV[8].safe.t='Ticket number ulta karo, use ghadi ka samay (HH:MM) maan lo.';
 function getUnlock(){try{return +localStorage.getItem('hollowhour_unlock')||1;}catch(e){return 1;}}
 function save(q){try{localStorage.setItem('hollowhour3d',JSON.stringify(S,(k,v)=>k==='hid'||k==='hp'?undefined:v));let k=0;for(let n=1;n<=15;n++)if(S.flags[LV[n].sk])k=n;if(k+1>getUnlock())localStorage.setItem('hollowhour_unlock',String(Math.min(15,k+1)));if(!q)toast('Game save ho gaya.');return true;}catch(e){if(!q)toast('Saving is unavailable here.');return false;}}
-{const sb=document.createElement('button');sb.className='btn';sb.id='mSel';sb.textContent='Select Level';$('mCont').after(sb);sb.onclick=()=>{const u=getUnlock();panel('Select Level','<p style="color:#8b95a3;font-size:14px">Sirf jeete hue levels khulte hain. Naya game hamesha Level 1 se shuru hota hai.</p>',[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>n<=u?btn('Level '+n+' · '+LV[n].name+bestOf(n),()=>{close();startAt(n);}):btn('Level '+n+' · Locked',()=>{},'')).concat([btn('Back',close)]));};}
+{const sb=document.createElement('button');sb.className='btn';sb.id='mSel';sb.textContent='Select Level';$('mCont').after(sb);sb.onclick=()=>{const u=getUnlock();panel('Select Level','<p style="color:#8b95a3;font-size:14px">Sirf jeete hue levels khulte hain. Naya game hamesha Level 1 se shuru hota hai.</p>',[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>n<=u?btn('Level '+n+' · '+LV[n].name+bestOf(n),()=>{close();startAt(n);}):btn('Level '+n+' · Locked',()=>{},'')).concat([btn('Wapas',close)]));};}
 const TUT=[['Chalna aur dekhna','Baayein taraf ke joystick se chalo. Dayein taraf ungli ghumao to dekho.'],['Torch','Light button se torch on ya off karo. Battery kam hone par roshni jhapakti hai.'],['Saboot dhundho','Chamakti cheezon ke paas jao aur Interact dabao. Saboot Journal mein jama hote hain.'],['Seedhiyan','Level 1 mein seedhiyon par Interact dabao to upar ya neeche jaoge.'],['Chhupna','Almari ke paas Interact dabao to chhup jaoge. Bahar aane ke liye dobara Interact dabao.'],['The Hollow','Level 2 se The Hollow tumhari taraf aata hai. Torch se usko dekhte raho to wo ruka rehta hai.']];
 function tut(i){if(i>=TUT.length){close();return;}panel('Tutorial '+(i+1)+'/'+TUT.length+' · '+TUT[i][0],'<p>'+TUT[i][1]+'</p>',[btn(i<TUT.length-1?'Next':'Done',()=>tut(i+1),'ac'),btn('Skip tutorial',close)]);}
 CL['C-003'][2]='Upar ki manzil ka storeroom';
@@ -503,7 +531,7 @@ function addShard(k){k=k||1;const n=lsg('hh_sh',0)+k;lss('hh_sh',n);snd('c2');to
  setInterval(()=>{if(!running)return;sc.textContent='◆ '+lsg('hh_sh',0);const a=SH[S.level];if(!a)return;for(const s of a){const got=S.flags[s.id];s.m.visible=s.g.visible=!got;if(got)continue;s.m.rotation.y+=.2;if(!S.up&&!S.hid&&Math.hypot(s.x-S.px,s.z-S.pz)<1.2){S.flags[s.id]=1;addShard(1);}}},100);}
 const TC=[['Garam (default)',0xffe6b8,0],['Neela',0x9fd0ff,10],['Hara',0x9fffb0,25],['Laal',0xff8a7a,40],['Safed bhoot',0xffffff,60]];
 function applyTorch(){spot.color.setHex(TC[lsg('hh_torch',0)][1]);}applyTorch();
-function shop(){const sh=lsg('hh_sh',0),un=lsg('hh_unl',[0]);panel('Memory Shop','<p style="color:#66ccff">Yaad ke tukde: '+sh+'</p><p style="color:#8b95a3;font-size:14px">Levels mein chamakte neele tukde jama karo. S rank par 5, A rank par 2 extra milte hain. Torch ke naye rang kharido.</p>',TC.map((c,i)=>un.includes(i)?btn((lsg('hh_torch',0)===i?'✓ ':'')+c[0],()=>{lss('hh_torch',i);applyTorch();shop();}):btn('Buy: '+c[0]+' ('+c[2]+')',()=>{if(sh>=c[2]){lss('hh_sh',sh-c[2]);un.push(i);lss('hh_unl',un);lss('hh_torch',i);applyTorch();snd('open');shop();}else toast('Tukde kam hain.');})).concat([btn('Back',close)]));}
+function shop(){const sh=lsg('hh_sh',0),un=lsg('hh_unl',[0]);panel('Memory Shop','<p style="color:#66ccff">Yaad ke tukde: '+sh+'</p><p style="color:#8b95a3;font-size:14px">Levels mein chamakte neele tukde jama karo. S rank par 5, A rank par 2 extra milte hain. Torch ke naye rang kharido.</p>',TC.map((c,i)=>un.includes(i)?btn((lsg('hh_torch',0)===i?'✓ ':'')+c[0],()=>{lss('hh_torch',i);applyTorch();shop();}):btn('Buy: '+c[0]+' ('+c[2]+')',()=>{if(sh>=c[2]){lss('hh_sh',sh-c[2]);un.push(i);lss('hh_unl',un);lss('hh_torch',i);applyTorch();snd('open');shop();}else toast('Tukde kam hain.');})).concat([btn('Wapas',close)]));}
 {const shb=document.createElement('button');shb.className='btn';shb.textContent='Memory Shop';$('mCont').after(shb);shb.onclick=shop;}
 // ===== English =====
 Object.assign({},{creak:'[Wood creaks somewhere]',whisper:'[Whispering…]',thunder:'[Thunder rumbles in the distance]',rumble:'[Rumbling]',sting:'[LOUD SCARY SOUND!]',open:'[A lock clicks open]',bad:'[Something went wrong]',clue:'[Clue found]',beat:'[Your heartbeat quickens]',slam:'[A door slams somewhere]'});
@@ -535,7 +563,7 @@ function safeLCore(){const d=LV[S.level],n=S.level,L=d.code.length;if(S.flags[d.
  if(d.clock){panel(d.safe.n,'<p>'+d.safe.t+'</p><p style="font-size:30px;color:#c9a45c;text-align:center" id="ck">12:00</p><input id="hh" type="range" min="0" max="23" value="12" style="width:100%;touch-action:auto"><input id="mm" type="range" min="0" max="59" value="0" style="width:100%;touch-action:auto"><p id="fb" class="bad" style="min-height:20px"></p>',[btn('Set the hands',()=>{const v=String($('hh').value).padStart(2,'0')+String($('mm').value).padStart(2,'0');if(v===d.code)ok();else bad('The clock does not move.');},'ac'),btn('Step back',close)]);const up=()=>{$('ck').textContent=String($('hh').value).padStart(2,'0')+':'+String($('mm').value).padStart(2,'0');};$('hh').oninput=up;$('mm').oninput=up;return;}
  panel(d.safe.n,'<p>'+d.safe.t+'</p>'+(d.timed?'<p id="tm" class="bad" style="text-align:center;font-size:26px">'+d.timed+'s</p>':'')+'<input id="code" inputmode="numeric" maxlength="'+L+'" placeholder="'+'-'.repeat(L)+'"><p id="fb" class="bad" style="min-height:20px"></p>',[btn('Try code',()=>{const v=$('code').value;if(v===want){ok();return;}if(v.length<L){snd('bad');$('fb').textContent='Code mein '+L+' ank daalo.';return;}bad('Galat code.');},'ac'),btn('Step back',close)]);
  if(d.timed){let t=d.timed;const iv=setInterval(()=>{const e=$('tm');if(!e||!ovOpen){clearInterval(iv);return;}t--;e.textContent=t+'s';if(t<=0){clearInterval(iv);close();toast('Waqt khatam! The Hollow yahin aa gaya…');watcher.visible=true;watcher.position.set(S.px+Math.sin(S.yaw)*3,0,S.pz+Math.cos(S.yaw)*3);snd('sting');}},1000);}}
-function settings(){panel('Settings','',[btn('Graphics: '+QN[S.q],()=>{setQ((S.q+1)%3);save(true);settings();}),btn('Look sensitivity: '+SN[S.sens<.9?0:S.sens>1.1?2:1],()=>{S.sens=S.sens<.9?1:S.sens>1.1?.6:1.5;save(true);settings();}),btn('Sound: '+(muted?'Off':'On'),()=>{muted=!muted;if(MG)MG.gain.value=muted?0:1;settings();}),btn('Vibration: '+(navigator.vibrate?(S.vib===false?'Off':'On'):'Not supported'),()=>{S.vib=S.vib===false;save(true);if(S.vib&&navigator.vibrate)navigator.vibrate(60);settings();}),btn('Subtitles: '+(S.sub===false?'Off':'On'),()=>{S.sub=S.sub===false;save(true);settings();}),btn('Difficulty: '+['Easy','Normal','Hard'][S.diff==null?1:S.diff],()=>{setDiff((S.diff==null?1:S.diff)+1);settings();}),btn('Back',pause,'ac')]);}
+function settings(){panel('Settings','',[btn('Graphics: '+QN[S.q],()=>{setQ((S.q+1)%3);save(true);settings();}),btn('Look sensitivity: '+SN[S.sens<.9?0:S.sens>1.1?2:1],()=>{S.sens=S.sens<.9?1:S.sens>1.1?.6:1.5;save(true);settings();}),btn('Sound: '+(muted?'Off':'On'),()=>{muted=!muted;if(MG)MG.gain.value=muted?0:1;settings();}),btn('Vibration: '+(navigator.vibrate?(S.vib===false?'Off':'On'):'Not supported'),()=>{S.vib=S.vib===false;save(true);if(S.vib&&navigator.vibrate)navigator.vibrate(60);settings();}),btn('Subtitles: '+(S.sub===false?'Off':'On'),()=>{S.sub=S.sub===false;save(true);settings();}),btn('Difficulty: '+['Easy','Normal','Hard'][S.diff==null?1:S.diff],()=>{setDiff((S.diff==null?1:S.diff)+1);settings();}),btn('Wapas',pause,'ac')]);}
 function finalChoice(){const dn=Object.keys(S.flags).filter(k=>/^dy\d/.test(k)).length;const bs=[btn('Let Elena go and stay in the hour yourself',()=>fin('You place your hand on the clock. 3:17 stops on your name. Elena crosses the door and turns back with a smile. The rain over Greywick stops. Now only your name is in the register.','Ending: Sacrifice')),btn('Run away with Elena',()=>fin('You grab Elena’s hand and run. Before the door closes, a dark shape slips out with you. You are both outside the town, but a clock keeps ticking behind you.','Ending: The Following Shadow'))];
  if(dn>=8)bs.push(btn('Give the Hollow its name: Harlan Moss',()=>fin('You say it out loud: “Harlan Moss.” The Hollow stops. For the first time, its face looks human. “Thank you,” it whispers. Every clock starts again at 3:18. You and Elena walk out together. The rain over Greywick has stopped.','Ending: The Truth'),'ac'));
  panel('The Final Choice','<p>The clock is about to tick. You have a few paths.</p><p style="color:#8b95a3;font-size:14px">Diary pages: '+dn+'/15'+(dn<8?' (you need 8 for the truth path)':'')+'</p>',bs);}
